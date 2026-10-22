@@ -1,0 +1,6 @@
+{
+  "name": "Apex Athletics - Sports Academy Management Platform",
+  "description": "Multi-tenant Sports Academy Platform with strict RBAC for Admins, Coaches, and Parents, featuring attendance, court bookings, emergency broadcasts, and fee engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
