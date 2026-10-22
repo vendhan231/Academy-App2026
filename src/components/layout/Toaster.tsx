@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
@@ -8,7 +10,7 @@ export const Toaster: React.FC = () => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none">
+    <div className="pointer-events-none fixed inset-x-3 bottom-24 z-50 flex max-w-md flex-col gap-2 md:inset-x-auto md:bottom-5 md:right-5">
       {toasts.map((toast) => {
         const icons = {
           success: <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />,

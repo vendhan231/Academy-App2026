@@ -1,4 +1,6 @@
-export type UserRole = 'ADMIN' | 'COACH' | 'STUDENT_PARENT';
+import { SportId } from '../lib/sports';
+
+export type UserRole = 'ADMIN' | 'COACH' | 'STUDENT';
 
 export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-';
 
@@ -13,14 +15,44 @@ export interface User {
   avatar: string;
   mfaEnabled?: boolean;
   coachId?: string;
-  parentLinkedStudentIds?: string[]; // student IDs associated with this parent
+  studentId?: string;
+  parentLinkedStudentIds?: string[];
+}
+
+/** A student enrolled in one or more sports. */
+export interface Enrollment {
+  id: string;
+  studentId: string;
+  sportId: SportId;
+  joinedAt: string;
+  active: boolean;
+}
+
+/** A coach assigned to teach one or more sports. */
+export interface CoachAssignment {
+  id: string;
+  coachId: string;
+  sportId: SportId;
+}
+
+/** Attendance is recorded per day, per sport, per student. */
+export type AttendanceStatus = 'present' | 'absent';
+
+export interface AttendanceRecord {
+  id: string;
+  date: string; // YYYY-MM-DD
+  sportId: SportId;
+  studentId: string;
+  status: AttendanceStatus;
+  markedBy: string; // user id of the coach or admin
+  markedAt: string; // ISO timestamp
 }
 
 export interface Achievement {
   id: string;
   studentId: string;
   title: string;
-  sport: string;
+  sport: SportId;
   category: 'Tournament' | 'Skill Badge' | 'Milestone' | 'Personal Best';
   description: string;
   awardedDate: string;
@@ -53,6 +85,7 @@ export interface ActiveStudent {
   parentUserId: string;
   parentName: string;
   parentPhone: string;
+  parentMessagingConsentAt?: string;
   parentEmail: string;
   firstName: string;
   lastName: string;
@@ -62,13 +95,12 @@ export interface ActiveStudent {
   photoUrl: string;
   bloodGroup: BloodGroup;
   medicalNotes: string;
-  chronicAilments: string[]; // e.g. ["Asthma", "Dust allergy"]
+  chronicAilments: string[];
   allergies: string[];
   emergencyDoctorContact: EmergencyDoctorContact;
   digitalLiabilityWaiverSigned: boolean;
   waiverSignedDate?: string;
-  enrolledSports: string[];
-  batchShift: string; // e.g. "Morning 06:00 - 08:00 Squad", "Evening Elite 16:30 - 18:30"
+  batchShift: string;
   primaryAssignedCoachId: string;
   primaryAssignedCoachName: string;
   dateOfJoining: string;
@@ -92,7 +124,7 @@ export interface ArchivedStudent {
     notes: string;
     chronicAilments?: string[];
   };
-  enrolledSports: string[];
+  enrolledSports: SportId[];
   achievements: Achievement[];
   cohortYears: string; // e.g. "2024-2025", "2025-2026"
   archivalReason: 'Graduated' | 'Relocated' | 'Dropped Out' | 'Transferred';
@@ -107,7 +139,6 @@ export interface Coach {
   name: string;
   email: string;
   phone: string;
-  sports: string[];
   certification: string;
   avatar: string;
   baseSalary: number;
@@ -121,7 +152,7 @@ export interface Coach {
 export interface Facility {
   id: string;
   name: string;
-  sport: string;
+  sport: SportId;
   type: 'Court' | 'Field' | 'Pool' | 'Track' | 'Studio';
   maxPlayers: number;
   bufferMinutes: number;
@@ -134,7 +165,7 @@ export interface FacilityBooking {
   id: string;
   facilityId: string;
   facilityName: string;
-  sport: string;
+  sport: SportId;
   bookedByUserId: string;
   bookedByName: string;
   bookedByRole: UserRole;
@@ -144,22 +175,6 @@ export interface FacilityBooking {
   status: 'CONFIRMED' | 'PENDING' | 'CANCELLED';
   notes?: string;
   createdAt: string;
-}
-
-export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'MEDICAL_LEAVE';
-
-export interface StudentAttendanceRecord {
-  id: string;
-  date: string;
-  studentId: string;
-  studentName: string;
-  batchName: string;
-  sport: string;
-  status: AttendanceStatus;
-  markedByCoachId: string;
-  markedByCoachName: string;
-  markedAt: string;
-  notes?: string;
 }
 
 export interface CoachAttendanceRecord {
@@ -184,7 +199,7 @@ export interface StudentInvoice {
   parentPhone: string;
   amount: number;
   period: string; // e.g. "October 2026", "Q4 2026"
-  sportsIncluded: string[];
+  sportsIncluded: SportId[];
   dueDate: string;
   status: 'PAID' | 'PENDING' | 'OVERDUE';
   paidAt?: string;
@@ -230,7 +245,7 @@ export interface IncidentReport {
   id: string;
   studentId: string;
   studentName: string;
-  sport: string;
+  sport: SportId;
   timestamp: string;
   severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   bodyPart: string;
@@ -245,7 +260,7 @@ export interface IncidentReport {
 export interface MediaItem {
   id: string;
   title: string;
-  sport: string;
+  sport: SportId;
   mediaUrl: string;
   thumbnailUrl: string;
   category: 'Match' | 'Training' | 'Award Ceremony' | 'Clinic';
@@ -253,6 +268,17 @@ export interface MediaItem {
   uploadedAt: string;
   taggedStudentNames: string[];
   isApproved: boolean;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  audience: 'ALL' | UserRole;
+  sportId?: SportId;
+  createdAt: string;
+  authorName: string;
+  pinned?: boolean;
 }
 
 export interface BulkIngestRow {
@@ -263,9 +289,9 @@ export interface BulkIngestRow {
   parent_name?: string;
   parent_phone?: string;
   parent_email?: string;
-  enrolled_sports?: string[] | string;
+  enrolled_sports?: SportId[] | string;
   date_of_joining?: string;
-  achievements?: Array<{ title: string; sport: string; year: number }>;
+  achievements?: Array<{ title: string; sport: SportId; year: number }>;
 }
 
 export interface IngestValidationIssue {
@@ -274,4 +300,18 @@ export interface IngestValidationIssue {
   message: string;
   severity: 'error' | 'warning';
   valueProvided?: string;
+}
+
+/** Aggregated attendance for one student over a period. */
+export interface StudentAttendanceSummary {
+  studentId: string;
+  present: number;
+  absent: number;
+  total: number;
+  percentage: number;
+  byDate: Array<{
+    date: string;
+    sportId: SportId;
+    status: AttendanceStatus;
+  }>;
 }

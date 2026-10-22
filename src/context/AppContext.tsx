@@ -1,41 +1,50 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+'use client';
+
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActiveStudent,
+  Announcement,
   ArchivedStudent,
+  AttendanceRecord,
+  AttendanceStatus,
+  BloodGroup,
   Coach,
-  Facility,
-  FacilityBooking,
-  StudentAttendanceRecord,
+  CoachAssignment,
   CoachAttendanceRecord,
-  StudentInvoice,
   CoachPayrollRecord,
   EmergencyBroadcast,
+  Enrollment,
+  Facility,
+  FacilityBooking,
   IncidentReport,
+  IngestValidationIssue,
   MediaItem,
+  StudentAttendanceSummary,
+  StudentInvoice,
   User,
   UserRole,
-  AttendanceStatus,
-  Achievement,
-  SkillRating,
   BulkIngestRow,
-  IngestValidationIssue,
-  BloodGroup,
 } from '../types';
+import { SportId, SPORTS, isSportId } from '../lib/sports';
+import { SessionPayload, SESSION_TOKEN_KEY, roleHome } from '../lib/session';
+import { apiGet, apiPost, apiPut } from '../lib/apiClient';
 import {
-  INITIAL_USERS,
-  INITIAL_COACHES,
-  INITIAL_ACTIVE_STUDENTS,
+  INITIAL_ANNOUNCEMENTS,
   INITIAL_ARCHIVED_STUDENTS,
-  INITIAL_FACILITIES,
+  INITIAL_ACTIVE_STUDENTS,
   INITIAL_BOOKINGS,
-  INITIAL_STUDENT_ATTENDANCE,
-  INITIAL_COACH_ATTENDANCE,
-  INITIAL_INVOICES,
-  INITIAL_PAYROLL,
   INITIAL_BROADCASTS,
+  INITIAL_COACH_ASSIGNMENTS,
+  INITIAL_COACH_ATTENDANCE,
+  INITIAL_COACHES,
+  INITIAL_ENROLLMENTS,
+  INITIAL_FACILITIES,
   INITIAL_INCIDENTS,
+  INITIAL_INVOICES,
   INITIAL_MEDIA,
+  INITIAL_PAYROLL,
 } from '../data/initialData';
+import { buildSeedAttendance, toISODate } from '../data/attendanceSeed';
 
 export interface ToastMessage {
   id: string;
@@ -46,68 +55,99 @@ export interface ToastMessage {
 }
 
 interface AppContextType {
-  // Auth state
-  currentUser: User;
-  currentRole: UserRole;
-  activeChildId: string | null;
-  activeChild: ActiveStudent | null;
-  allUsers: User[];
-  loginAsUser: (user: User) => void;
-  switchRole: (role: UserRole) => void;
-  setActiveChildId: (studentId: string) => void;
+  /* ---------------- session ---------------- */
+  session: SessionPayload | null;
+  currentUser: User | null;
+  currentRole: UserRole | null;
+  isAuthenticated: boolean;
+  /** True once the client has resolved the session (avoids SSR mismatch). */
+  isReady: boolean;
+  signIn: (payload: { user: User; token: string; expiresAt: number }) => void;
+  signOut: () => void;
 
-  // Data
-  activeStudents: ActiveStudent[];
-  archivedStudents: ArchivedStudent[]; // Guarded: only accessible if currentRole === 'ADMIN'
+  /* ---------------- catalogue & directory ---------------- */
+  students: ActiveStudent[]; // role scoped
   coaches: Coach[];
+  enrollments: Enrollment[];
+  coachAssignments: CoachAssignment[];
+  announcements: Announcement[];
   facilities: Facility[];
   bookings: FacilityBooking[];
-  studentAttendance: StudentAttendanceRecord[];
   coachAttendance: CoachAttendanceRecord[];
   invoices: StudentInvoice[];
   payroll: CoachPayrollRecord[];
   broadcasts: EmergencyBroadcast[];
   incidents: IncidentReport[];
   media: MediaItem[];
+  archivedStudents: ArchivedStudent[]; // admin only
 
-  // Student Actions
+  /* ---------------- role scoped helpers ---------------- */
+  myStudent: ActiveStudent | null;
+  myCoach: Coach | null;
+  mySports: SportId[];
+  studentsForSport: (sportId: SportId) => ActiveStudent[];
+  sportNamesForStudent: (studentId: string) => string[];
+
+  /* ---------------- attendance ---------------- */
+  attendance: AttendanceRecord[];
+  attendanceForDate: (date: string, sportId?: SportId) => AttendanceRecord[];
+  markAttendance: (
+    date: string,
+    sportId: SportId,
+    entries: Array<{ studentId: string; status: AttendanceStatus }>
+  ) => Promise<{ success: boolean; message: string }>;
+  markAllPresent: (date: string, sportId: SportId) => Promise<{ success: boolean; message: string }>;
+  studentAttendanceSummary: (studentId: string, month?: string) => StudentAttendanceSummary;
+  /** True while the client is pulling the latest state from the API. */
+  isSyncing: boolean;
+  refreshFromServer: () => Promise<void>;
+
+  /* ---------------- directory mutations ---------------- */
   addActiveStudent: (studentData: Partial<ActiveStudent>) => ActiveStudent;
   updateActiveStudent: (id: string, updates: Partial<ActiveStudent>) => void;
+  updateCoachProfile: (id: string, updates: Pick<Coach, 'bio' | 'phone' | 'certification'>) => void;
   archiveStudent: (studentId: string, reason: ArchivedStudent['archivalReason'], exitNotes?: string) => void;
   restoreArchivedStudent: (archivedId: string) => void;
+  setEnrollments: (studentId: string, sportIds: SportId[]) => void;
   validateBulkIngestionData: (rows: BulkIngestRow[]) => {
     validCount: number;
     errorCount: number;
     issues: IngestValidationIssue[];
     validRows: BulkIngestRow[];
   };
-  executeBulkIngest: (validRows: BulkIngestRow[]) => { inserted: number; errors: number };
+  executeBulkIngest: (validRows: BulkIngestRow[]) => Promise<{
+    inserted: number;
+    errors: number;
+    credentials: Array<{ studentCode: string; username: string; password: string }>;
+  }>;
 
-  // Attendance Actions
+  /* ---------------- coach actions ---------------- */
   markBatchStudentAttendance: (
     records: Array<{ studentId: string; status: AttendanceStatus; notes?: string }>,
     batchName: string,
-    sport: string
-  ) => void;
+    sportId: SportId
+  ) => Promise<{ success: boolean; message: string }>;
   recordCoachCheckIn: (coachId: string, sessionType: 'Batch Training' | 'Private Coaching' | 'Clinic') => void;
   recordCoachCheckOut: (coachId: string) => void;
+  updateStudentSkills: (studentId: string, skills: Partial<ActiveStudent['skillRatings']>) => void;
+  awardStudentAchievement: (
+    studentId: string,
+    achievement: Omit<ActiveStudent['achievements'][number], 'id' | 'studentId'>
+  ) => void;
+  createIncidentReport: (
+    incident: Omit<IncidentReport, 'id' | 'timestamp' | 'parentNotified' | 'parentNotificationSentAt'>
+  ) => void;
 
-  // Skill & Incident Actions
-  updateStudentSkills: (studentId: string, skills: Partial<SkillRating>) => void;
-  awardStudentAchievement: (studentId: string, achievement: Omit<Achievement, 'id' | 'studentId'>) => void;
-  createIncidentReport: (incident: Omit<IncidentReport, 'id' | 'timestamp' | 'parentNotified' | 'parentNotificationSentAt'>) => void;
-
-  // Facility Booking Actions
-  createBooking: (booking: Omit<FacilityBooking, 'id' | 'createdAt' | 'status'>) => { success: boolean; message: string };
+  /* ---------------- facilities, finance, broadcast, media ---------------- */
+  createBooking: (booking: Omit<FacilityBooking, 'id' | 'createdAt' | 'status'>) => {
+    success: boolean;
+    message: string;
+  };
   cancelBooking: (bookingId: string) => void;
-
-  // Finance Actions
-  payInvoice: (invoiceId: string, paymentMethod: string) => void;
-  sendWhatsAppPaymentReminder: (invoiceId: string) => void;
+  payInvoice: (invoiceId: string) => Promise<void>;
+  sendWhatsAppPaymentReminder: (invoiceId: string) => Promise<void>;
   generateNewInvoice: (invoice: Omit<StudentInvoice, 'id' | 'invoiceNumber'>) => void;
   markPayrollDisbursed: (payrollId: string) => void;
-
-  // WhatsApp Broadcast Actions
   sendEmergencyBroadcast: (broadcast: {
     targetType: 'ALL_PARENTS' | 'SPORT' | 'BATCH';
     targetValue?: string;
@@ -115,1062 +155,1405 @@ interface AppContextType {
     templateTitle: string;
     messageContent: string;
     channel: 'WHATSAPP' | 'SMS_FALLBACK';
-  }) => void;
-
-  // Media Actions
+  }) => Promise<boolean>;
   uploadMediaItem: (item: Omit<MediaItem, 'id' | 'uploadedAt' | 'isApproved'>) => void;
   toggleApproveMedia: (mediaId: string) => void;
 
-  // Notifications
+  /* ---------------- notifications & tooling ---------------- */
   toasts: ToastMessage[];
   addToast: (toast: Omit<ToastMessage, 'id' | 'timestamp'>) => void;
   removeToast: (id: string) => void;
-
-  // Simulator tools
-  resetAllData: () => void;
+  resetAllData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+/* ------------------------------------------------------------------ */
+/* Storage helpers (SSR safe)                                          */
+/* ------------------------------------------------------------------ */
+
+function readStorage(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function parseJSON<T>(raw: string | null): T | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key: string, value: unknown): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage full or blocked: the in-memory state still works.
+  }
+}
+
+function removeStorage(key: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // ignore
+  }
+}
+
+const KEYS = {
+  students: 'vsa_students',
+  coaches: 'vsa_coaches',
+  enrollments: 'vsa_enrollments',
+  coachAssignments: 'vsa_coach_assignments',
+  attendance: 'vsa_attendance',
+  announcements: 'vsa_announcements',
+  bookings: 'vsa_bookings',
+  coachAttendance: 'vsa_coach_attendance',
+  invoices: 'vsa_invoices',
+  payroll: 'vsa_payroll',
+  broadcasts: 'vsa_broadcasts',
+  incidents: 'vsa_incidents',
+  media: 'vsa_media',
+  archivedStudents: 'vsa_archived_students',
+  session: 'vsa_session',
+  token: SESSION_TOKEN_KEY,
+};
+
+/* ------------------------------------------------------------------ */
+/* Seed attendance                                                      */
+/* ------------------------------------------------------------------ */
+
+function buildInitialAttendance(): AttendanceRecord[] {
+  const enrollments: Record<string, SportId[]> = {};
+  for (const enrollment of INITIAL_ENROLLMENTS) {
+    enrollments[enrollment.studentId] = enrollments[enrollment.studentId] ?? [];
+    enrollments[enrollment.studentId].push(enrollment.sportId);
+  }
+
+  const coachBySport: Partial<Record<SportId, string>> = {};
+  for (const assignment of INITIAL_COACH_ASSIGNMENTS) {
+    const coach = INITIAL_COACHES.find((c) => c.id === assignment.coachId);
+    if (coach) coachBySport[assignment.sportId] = coach.userId;
+  }
+
+  const yesterday = toISODate(new Date(Date.now() - 86400000));
+
+  return buildSeedAttendance({
+    enrollments,
+    coachBySport,
+    endDate: yesterday,
+    days: 21,
+    markerIds: ['seed'],
+  });
+}
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Auth state
-  const [currentUser, setCurrentUser] = useState<User>(() => {
-    const saved = localStorage.getItem('apex_user');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.username) return parsed;
-    }
-    return INITIAL_USERS[0]; // Defaults to Vendhan (Director)
-  });
+  /* ---------------- session ---------------- */
+  const [session, setSession] = useState<SessionPayload | null>(() =>
+    parseJSON<SessionPayload>(readStorage(KEYS.session))
+  );
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
-  const [activeChildId, setActiveChildIdState] = useState<string | null>(() => {
-    return localStorage.getItem('apex_active_child') || 'stu-active-001';
-  });
+  const currentRole = session?.role ?? null;
+  const isAuthenticated = Boolean(session && session.expiresAt > Date.now());
 
-  // Main collections with localStorage persistence
-  const [activeStudents, setActiveStudents] = useState<ActiveStudent[]>(() => {
-    const saved = localStorage.getItem('apex_students');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.length > 0 && parsed[0].studentCode?.startsWith('VEN-')) return parsed;
-    }
-    return INITIAL_ACTIVE_STUDENTS;
-  });
-
-  const [archivedStudents, setArchivedStudents] = useState<ArchivedStudent[]>(() => {
-    const saved = localStorage.getItem('apex_archived_students');
-    return saved ? JSON.parse(saved) : INITIAL_ARCHIVED_STUDENTS;
-  });
-
-  const [coaches, setCoaches] = useState<Coach[]>(() => {
-    const saved = localStorage.getItem('apex_coaches');
-    return saved ? JSON.parse(saved) : INITIAL_COACHES;
-  });
-
+  /* ---------------- collections ---------------- */
+  const [students, setStudents] = useState<ActiveStudent[]>(
+    () => parseJSON<ActiveStudent[]>(readStorage(KEYS.students)) ?? INITIAL_ACTIVE_STUDENTS
+  );
+  const [coaches, setCoaches] = useState<Coach[]>(
+    () => parseJSON<Coach[]>(readStorage(KEYS.coaches)) ?? INITIAL_COACHES
+  );
+  const [enrollments, setEnrollmentsState] = useState<Enrollment[]>(
+    () => parseJSON<Enrollment[]>(readStorage(KEYS.enrollments)) ?? INITIAL_ENROLLMENTS
+  );
+  const [coachAssignments, setCoachAssignments] = useState<CoachAssignment[]>(
+    () => parseJSON<CoachAssignment[]>(readStorage(KEYS.coachAssignments)) ?? INITIAL_COACH_ASSIGNMENTS
+  );
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>(
+    () => parseJSON<AttendanceRecord[]>(readStorage(KEYS.attendance)) ?? buildInitialAttendance()
+  );
+  const [announcements, setAnnouncements] = useState<Announcement[]>(
+    () => parseJSON<Announcement[]>(readStorage(KEYS.announcements)) ?? INITIAL_ANNOUNCEMENTS
+  );
   const [facilities] = useState<Facility[]>(INITIAL_FACILITIES);
-
-  const [bookings, setBookings] = useState<FacilityBooking[]>(() => {
-    const saved = localStorage.getItem('apex_bookings');
-    return saved ? JSON.parse(saved) : INITIAL_BOOKINGS;
-  });
-
-  const [studentAttendance, setStudentAttendance] = useState<StudentAttendanceRecord[]>(() => {
-    const saved = localStorage.getItem('apex_student_att');
-    return saved ? JSON.parse(saved) : INITIAL_STUDENT_ATTENDANCE;
-  });
-
-  const [coachAttendance, setCoachAttendance] = useState<CoachAttendanceRecord[]>(() => {
-    const saved = localStorage.getItem('apex_coach_att');
-    return saved ? JSON.parse(saved) : INITIAL_COACH_ATTENDANCE;
-  });
-
-  const [invoices, setInvoices] = useState<StudentInvoice[]>(() => {
-    const saved = localStorage.getItem('apex_invoices');
-    return saved ? JSON.parse(saved) : INITIAL_INVOICES;
-  });
-
-  const [payroll, setPayroll] = useState<CoachPayrollRecord[]>(() => {
-    const saved = localStorage.getItem('apex_payroll');
-    return saved ? JSON.parse(saved) : INITIAL_PAYROLL;
-  });
-
-  const [broadcasts, setBroadcasts] = useState<EmergencyBroadcast[]>(() => {
-    const saved = localStorage.getItem('apex_broadcasts');
-    return saved ? JSON.parse(saved) : INITIAL_BROADCASTS;
-  });
-
-  const [incidents, setIncidents] = useState<IncidentReport[]>(() => {
-    const saved = localStorage.getItem('apex_incidents');
-    return saved ? JSON.parse(saved) : INITIAL_INCIDENTS;
-  });
-
-  const [media, setMedia] = useState<MediaItem[]>(() => {
-    const saved = localStorage.getItem('apex_media');
-    return saved ? JSON.parse(saved) : INITIAL_MEDIA;
-  });
-
+  const [bookings, setBookings] = useState<FacilityBooking[]>(
+    () => parseJSON<FacilityBooking[]>(readStorage(KEYS.bookings)) ?? INITIAL_BOOKINGS
+  );
+  const [coachAttendance, setCoachAttendance] = useState<CoachAttendanceRecord[]>(
+    () => parseJSON<CoachAttendanceRecord[]>(readStorage(KEYS.coachAttendance)) ?? INITIAL_COACH_ATTENDANCE
+  );
+  const [invoices, setInvoices] = useState<StudentInvoice[]>(
+    () => parseJSON<StudentInvoice[]>(readStorage(KEYS.invoices)) ?? INITIAL_INVOICES
+  );
+  const [payroll, setPayroll] = useState<CoachPayrollRecord[]>(
+    () => parseJSON<CoachPayrollRecord[]>(readStorage(KEYS.payroll)) ?? INITIAL_PAYROLL
+  );
+  const [broadcasts, setBroadcasts] = useState<EmergencyBroadcast[]>(
+    () => parseJSON<EmergencyBroadcast[]>(readStorage(KEYS.broadcasts)) ?? INITIAL_BROADCASTS
+  );
+  const [incidents, setIncidents] = useState<IncidentReport[]>(
+    () => parseJSON<IncidentReport[]>(readStorage(KEYS.incidents)) ?? INITIAL_INCIDENTS
+  );
+  const [media, setMedia] = useState<MediaItem[]>(
+    () => parseJSON<MediaItem[]>(readStorage(KEYS.media)) ?? INITIAL_MEDIA
+  );
+  const [archivedStudents, setArchivedStudents] = useState<ArchivedStudent[]>(
+    () => parseJSON<ArchivedStudent[]>(readStorage(KEYS.archivedStudents)) ?? INITIAL_ARCHIVED_STUDENTS
+  );
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const isSharedStateReady = useRef(false);
+  const lastSharedState = useRef('');
 
-  // Sync to LocalStorage
-  useEffect(() => {
-    localStorage.setItem('apex_user', JSON.stringify(currentUser));
-  }, [currentUser]);
+  /* ---------------- persistence ---------------- */
+  useEffect(() => writeStorage(KEYS.students, students), [students]);
+  useEffect(() => writeStorage(KEYS.coaches, coaches), [coaches]);
+  useEffect(() => writeStorage(KEYS.enrollments, enrollments), [enrollments]);
+  useEffect(() => writeStorage(KEYS.coachAssignments, coachAssignments), [coachAssignments]);
+  useEffect(() => writeStorage(KEYS.attendance, attendance), [attendance]);
+  useEffect(() => writeStorage(KEYS.announcements, announcements), [announcements]);
+  useEffect(() => writeStorage(KEYS.bookings, bookings), [bookings]);
+  useEffect(() => writeStorage(KEYS.coachAttendance, coachAttendance), [coachAttendance]);
+  useEffect(() => writeStorage(KEYS.invoices, invoices), [invoices]);
+  useEffect(() => writeStorage(KEYS.payroll, payroll), [payroll]);
+  useEffect(() => writeStorage(KEYS.broadcasts, broadcasts), [broadcasts]);
+  useEffect(() => writeStorage(KEYS.incidents, incidents), [incidents]);
+  useEffect(() => writeStorage(KEYS.media, media), [media]);
+  useEffect(() => writeStorage(KEYS.archivedStudents, archivedStudents), [archivedStudents]);
 
-  useEffect(() => {
-    localStorage.setItem('apex_students', JSON.stringify(activeStudents));
-  }, [activeStudents]);
+  /* ---------------- server sync ---------------- */
+  /**
+   * Pulls the role scoped view of the academy from the API. The server is the
+   * source of truth, so this runs on sign in and whenever a screen needs the
+   * freshest numbers.
+   */
+  const refreshFromServer = useCallback(async (showIndicator = false) => {
+    if (showIndicator) setIsSyncing(true);
+    try {
+      const result = await apiGet<{ state: {
+        students: ActiveStudent[];
+        coaches: Coach[];
+        enrollments: Enrollment[];
+        coachAssignments: CoachAssignment[];
+        attendance: AttendanceRecord[];
+        announcements: Announcement[];
+        archivedStudents: ArchivedStudent[];
+        facilities: Facility[];
+        bookings: FacilityBooking[];
+        coachAttendance: CoachAttendanceRecord[];
+        invoices: StudentInvoice[];
+        payroll: CoachPayrollRecord[];
+        broadcasts: EmergencyBroadcast[];
+        incidents: IncidentReport[];
+        media: MediaItem[];
+      } }>('/api/state');
 
-  useEffect(() => {
-    localStorage.setItem('apex_archived_students', JSON.stringify(archivedStudents));
-  }, [archivedStudents]);
-
-  useEffect(() => {
-    localStorage.setItem('apex_bookings', JSON.stringify(bookings));
-  }, [bookings]);
-
-  useEffect(() => {
-    localStorage.setItem('apex_student_att', JSON.stringify(studentAttendance));
-  }, [studentAttendance]);
-
-  useEffect(() => {
-    localStorage.setItem('apex_coach_att', JSON.stringify(coachAttendance));
-  }, [coachAttendance]);
-
-  useEffect(() => {
-    localStorage.setItem('apex_invoices', JSON.stringify(invoices));
-  }, [invoices]);
-
-  useEffect(() => {
-    localStorage.setItem('apex_payroll', JSON.stringify(payroll));
-  }, [payroll]);
-
-  useEffect(() => {
-    localStorage.setItem('apex_broadcasts', JSON.stringify(broadcasts));
-  }, [broadcasts]);
-
-  useEffect(() => {
-    localStorage.setItem('apex_incidents', JSON.stringify(incidents));
-  }, [incidents]);
-
-  useEffect(() => {
-    localStorage.setItem('apex_media', JSON.stringify(media));
-  }, [media]);
-
-  const addToast = (toast: Omit<ToastMessage, 'id' | 'timestamp'>) => {
-    const id = 'toast-' + Math.random().toString(36).substring(2, 9);
-    const newToast: ToastMessage = {
-      ...toast,
-      id,
-      timestamp: new Date().toLocaleTimeString(),
-    };
-    setToasts((prev) => [newToast, ...prev].slice(0, 5));
-    setTimeout(() => {
-      removeToast(id);
-    }, 5000);
-  };
-
-  const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
-
-  // Auth & Role helpers
-  const currentRole = currentUser.role;
-
-  const loginAsUser = (user: User) => {
-    setCurrentUser(user);
-    if (user.role === 'STUDENT_PARENT' && user.parentLinkedStudentIds && user.parentLinkedStudentIds.length > 0) {
-      setActiveChildIdState(user.parentLinkedStudentIds[0]);
-      localStorage.setItem('apex_active_child', user.parentLinkedStudentIds[0]);
-    }
-    addToast({
-      type: 'info',
-      title: `Logged in as ${user.name}`,
-      description: `Role assigned: ${user.role} with RBAC policies enforced.`,
-    });
-  };
-
-  const switchRole = (role: UserRole) => {
-    const targetUser = INITIAL_USERS.find((u) => u.role === role);
-    if (targetUser) {
-      loginAsUser(targetUser);
-    }
-  };
-
-  const setActiveChildId = (studentId: string) => {
-    setActiveChildIdState(studentId);
-    localStorage.setItem('apex_active_child', studentId);
-    const child = activeStudents.find((s) => s.id === studentId);
-    if (child) {
-      addToast({
-        type: 'info',
-        title: `Switched Child Profile`,
-        description: `Now viewing ${child.firstName} ${child.lastName}'s achievements, skills & schedule.`,
-      });
-    }
-  };
-
-  const activeChild = activeStudents.find((s) => s.id === activeChildId) || activeStudents[0] || null;
-
-  // Active Students Actions
-  const addActiveStudent = (studentData: Partial<ActiveStudent>): ActiveStudent => {
-    const nextCodeNum = activeStudents.length + archivedStudents.length + 1;
-    const formattedNum = String(nextCodeNum).padStart(3, '0');
-    const studentCode = `VEN-${formattedNum}`;
-    const newStudent: ActiveStudent = {
-      id: `stu-active-${Date.now()}`,
-      studentCode,
-      loginId: formattedNum,
-      password: 'vendhan',
-      parentUserId: studentData.parentUserId || 'user-parent-1',
-      parentName: studentData.parentName || 'Parent Name',
-      parentPhone: studentData.parentPhone || '+19876543210',
-      parentEmail: studentData.parentEmail || 'parent@example.com',
-      firstName: studentData.firstName || 'Student',
-      lastName: studentData.lastName || 'Athlete',
-      dob: studentData.dob || '2014-01-01',
-      gender: studentData.gender || 'Male',
-      residentialAddress: studentData.residentialAddress || '123 Academy Blvd',
-      photoUrl:
-        studentData.photoUrl ||
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-      bloodGroup: (studentData.bloodGroup as BloodGroup) || 'O+',
-      medicalNotes: studentData.medicalNotes || 'No chronic restrictions.',
-      chronicAilments: studentData.chronicAilments || [],
-      allergies: studentData.allergies || [],
-      emergencyDoctorContact: studentData.emergencyDoctorContact || {
-        name: 'Dr. Gregory House, MD',
-        phone: '+15559871234',
-        clinic: 'West Hills Pediatric Sports Medicine',
-      },
-      digitalLiabilityWaiverSigned: studentData.digitalLiabilityWaiverSigned ?? true,
-      waiverSignedDate: new Date().toISOString().split('T')[0],
-      enrolledSports: studentData.enrolledSports || ['Tennis'],
-      batchShift: studentData.batchShift || 'Morning 06:00 - 08:00 Squad',
-      primaryAssignedCoachId: studentData.primaryAssignedCoachId || 'coach-1',
-      primaryAssignedCoachName: studentData.primaryAssignedCoachName || 'Elena Rostova',
-      dateOfJoining: studentData.dateOfJoining || new Date().toISOString().split('T')[0],
-      isActive: true,
-      achievements: studentData.achievements || [],
-      skillRatings: studentData.skillRatings || {
-        stamina: 3,
-        agility: 3,
-        technique: 3,
-        discipline: 4,
-        lastUpdated: new Date().toISOString().split('T')[0],
-        updatedByCoachName: 'Elena Rostova',
-        badges: ['Academy Cadet'],
-        coachFeedbackNotes: 'Newly onboarded student. Baseline assessment completed.',
-      },
-    };
-
-    setActiveStudents((prev) => [newStudent, ...prev]);
-    addToast({
-      type: 'success',
-      title: 'Active Student Registered',
-      description: `Assigned ID ${studentCode} to ${newStudent.firstName} ${newStudent.lastName}.`,
-    });
-    return newStudent;
-  };
-
-  const updateActiveStudent = (id: string, updates: Partial<ActiveStudent>) => {
-    setActiveStudents((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
-    );
-    addToast({
-      type: 'success',
-      title: 'Student Profile Updated',
-      description: 'Changes persisted to directory.',
-    });
-  };
-
-  // Archive Student (Admin Exclusive)
-  const archiveStudent = (
-    studentId: string,
-    reason: ArchivedStudent['archivalReason'],
-    exitNotes?: string
-  ) => {
-    if (currentRole !== 'ADMIN') {
-      addToast({
-        type: 'error',
-        title: 'RBAC Access Denied',
-        description: 'Only Administrator roles can execute student archival operations.',
-      });
-      return;
-    }
-
-    const studentToArchive = activeStudents.find((s) => s.id === studentId);
-    if (!studentToArchive) return;
-
-    const currentYear = new Date().getFullYear();
-    const cohortYears = `${studentToArchive.dateOfJoining.slice(0, 4)}-${currentYear}`;
-
-    const archivedRecord: ArchivedStudent = {
-      id: `arch-${Date.now()}`,
-      originalStudentId: studentToArchive.id,
-      studentCode: studentToArchive.studentCode,
-      fullName: `${studentToArchive.firstName} ${studentToArchive.lastName}`,
-      parentDetails: {
-        name: studentToArchive.parentName,
-        phone: studentToArchive.parentPhone,
-        email: studentToArchive.parentEmail,
-      },
-      medicalHistory: {
-        bloodGroup: studentToArchive.bloodGroup,
-        notes: studentToArchive.medicalNotes,
-        chronicAilments: studentToArchive.chronicAilments,
-      },
-      enrolledSports: studentToArchive.enrolledSports,
-      achievements: studentToArchive.achievements,
-      cohortYears,
-      archivalReason: reason,
-      exitNotes: exitNotes || `Archived due to ${reason}.`,
-      archivedAt: new Date().toISOString(),
-      archivedBy: `${currentUser.name} (${currentUser.role})`,
-    };
-
-    setActiveStudents((prev) => prev.filter((s) => s.id !== studentId));
-    setArchivedStudents((prev) => [archivedRecord, ...prev]);
-
-    addToast({
-      type: 'warning',
-      title: 'Student Archived',
-      description: `${studentToArchive.firstName} ${studentToArchive.lastName} moved to Admin-Only Archives (${cohortYears}).`,
-    });
-  };
-
-  // Restore Archived Student (Admin Exclusive)
-  const restoreArchivedStudent = (archivedId: string) => {
-    if (currentRole !== 'ADMIN') {
-      addToast({
-        type: 'error',
-        title: 'RBAC Access Denied',
-        description: 'Only Administrator roles can restore archived students.',
-      });
-      return;
-    }
-
-    const record = archivedStudents.find((a) => a.id === archivedId);
-    if (!record) return;
-
-    const names = record.fullName.split(' ');
-    const firstName = names[0];
-    const lastName = names.slice(1).join(' ') || 'Athlete';
-
-    const restored: ActiveStudent = {
-      id: record.originalStudentId || `stu-restored-${Date.now()}`,
-      studentCode: record.studentCode,
-      parentUserId: 'user-parent-1',
-      parentName: record.parentDetails.name,
-      parentPhone: record.parentDetails.phone,
-      parentEmail: record.parentDetails.email,
-      firstName,
-      lastName,
-      dob: '2013-06-15',
-      gender: 'Male',
-      residentialAddress: '742 Academy Drive',
-      photoUrl:
-        'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&auto=format&fit=crop&q=80',
-      bloodGroup: (record.medicalHistory.bloodGroup as BloodGroup) || 'O+',
-      medicalNotes: record.medicalHistory.notes || 'No chronic restrictions.',
-      chronicAilments: record.medicalHistory.chronicAilments || [],
-      allergies: [],
-      emergencyDoctorContact: {
-        name: 'Dr. Gregory House, MD',
-        phone: '+15559871234',
-        clinic: 'West Hills Pediatric Sports Medicine',
-      },
-      digitalLiabilityWaiverSigned: true,
-      waiverSignedDate: new Date().toISOString().split('T')[0],
-      enrolledSports: record.enrolledSports || ['Tennis'],
-      batchShift: 'Morning 06:00 - 08:00 Squad',
-      primaryAssignedCoachId: 'coach-1',
-      primaryAssignedCoachName: 'Elena Rostova',
-      dateOfJoining: new Date().toISOString().split('T')[0],
-      isActive: true,
-      achievements: record.achievements || [],
-      skillRatings: {
-        stamina: 4,
-        agility: 4,
-        technique: 4,
-        discipline: 4,
-        lastUpdated: new Date().toISOString().split('T')[0],
-        updatedByCoachName: 'Elena Rostova',
-        badges: ['Restored Athlete'],
-        coachFeedbackNotes: 'Re-admitted to active training schedule.',
-      },
-    };
-
-    setArchivedStudents((prev) => prev.filter((a) => a.id !== archivedId));
-    setActiveStudents((prev) => [restored, ...prev]);
-
-    addToast({
-      type: 'success',
-      title: 'Student Restored to Active',
-      description: `${restored.firstName} ${restored.lastName} is now active in training batches.`,
-    });
-  };
-
-  // Bulk Ingestion Engine Validation
-  const validateBulkIngestionData = (rows: BulkIngestRow[]) => {
-    const issues: IngestValidationIssue[] = [];
-    const validRows: BulkIngestRow[] = [];
-    const validBloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-    const existingPhones = new Set(activeStudents.map((s) => s.parentPhone.replace(/\D/g, '')));
-    const rowPhones = new Set<string>();
-
-    rows.forEach((row, index) => {
-      const rowNum = index + 1;
-      let hasError = false;
-
-      // Full Name
-      if (!row.full_name || row.full_name.trim().length < 2) {
-        issues.push({
-          row: rowNum,
-          field: 'full_name',
-          message: 'Full Name is required and must be at least 2 characters.',
-          severity: 'error',
-          valueProvided: row.full_name,
-        });
-        hasError = true;
+      if (result.ok && result.data) {
+        const state = result.data.state;
+        lastSharedState.current = JSON.stringify(state);
+        setStudents(state.students);
+        setCoaches(state.coaches);
+        setEnrollmentsState(state.enrollments);
+        setCoachAssignments(state.coachAssignments);
+        setAttendance(state.attendance);
+        setAnnouncements(state.announcements);
+        setArchivedStudents(state.archivedStudents);
+        setBookings(state.bookings);
+        setCoachAttendance(state.coachAttendance);
+        setInvoices(state.invoices);
+        setPayroll(state.payroll);
+        setBroadcasts(state.broadcasts);
+        setIncidents(state.incidents);
+        setMedia(state.media);
+        isSharedStateReady.current = true;
+      } else if (result.status !== 401) {
+        console.error('Could not refresh shared academy data:', result.message);
       }
+    } catch (error) {
+      console.error('Could not refresh shared academy data:', error);
+    } finally {
+      if (showIndicator) setIsSyncing(false);
+    }
+  }, []);
 
-      // DOB
-      if (!row.dob || isNaN(Date.parse(row.dob))) {
-        issues.push({
-          row: rowNum,
-          field: 'dob',
-          message: 'Date of Birth must be a valid ISO format (YYYY-MM-DD).',
-          severity: 'error',
-          valueProvided: row.dob,
-        });
-        hasError = true;
-      }
+  /* ---------------- session bootstrap ---------------- */
+  useEffect(() => {
+    let cancelled = false;
 
-      // Blood Group
-      if (!row.blood_group || !validBloodGroups.includes(row.blood_group.trim().toUpperCase())) {
-        issues.push({
-          row: rowNum,
-          field: 'blood_group',
-          message: `Invalid blood group. Allowed: ${validBloodGroups.join(', ')}`,
-          severity: 'error',
-          valueProvided: row.blood_group,
-        });
-        hasError = true;
-      }
-
-      // Parent Phone
-      if (!row.parent_phone || row.parent_phone.trim().length < 7) {
-        issues.push({
-          row: rowNum,
-          field: 'parent_phone',
-          message: 'Parent Phone is required for WhatsApp emergency alerts.',
-          severity: 'error',
-          valueProvided: row.parent_phone,
-        });
-        hasError = true;
-      } else {
-        const cleanPhone = row.parent_phone.replace(/\D/g, '');
-        if (existingPhones.has(cleanPhone) || rowPhones.has(cleanPhone)) {
-          issues.push({
-            row: rowNum,
-            field: 'parent_phone',
-            message: 'Duplicate parent phone number detected.',
-            severity: 'warning',
-            valueProvided: row.parent_phone,
-          });
+    async function resolveSession() {
+      // The token is persisted as JSON, so it has to be parsed back out before
+      // it can be used as a bearer credential.
+      const token = parseJSON<string>(readStorage(KEYS.token));
+      if (!token) {
+        if (!cancelled) {
+          setSession(null);
+          setCurrentUser(null);
+          setIsReady(true);
         }
-        rowPhones.add(cleanPhone);
+        return;
       }
 
-      // Enrolled Sports
-      if (!row.enrolled_sports || (Array.isArray(row.enrolled_sports) && row.enrolled_sports.length === 0)) {
-        issues.push({
-          row: rowNum,
-          field: 'enrolled_sports',
-          message: 'At least one sport must be specified.',
-          severity: 'error',
+      try {
+        const res = await fetch('/api/auth/session', {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
         });
-        hasError = true;
-      }
 
-      if (!hasError) {
-        validRows.push(row);
-      }
-    });
+        if (!res.ok) {
+          // Expired or revoked session: clear it so the shell can redirect.
+          if (!cancelled) {
+            removeStorage(KEYS.session);
+            removeStorage(KEYS.token);
+            setSession(null);
+            setCurrentUser(null);
+            setIsReady(true);
+          }
+          return;
+        }
 
-    return {
-      validCount: validRows.length,
-      errorCount: rows.length - validRows.length,
-      issues,
-      validRows,
+        const data = await res.json();
+        if (cancelled) return;
+        setSession(data.session);
+        setCurrentUser(data.user);
+        writeStorage(KEYS.session, data.session);
+      } catch {
+        if (!cancelled) {
+          setSession(null);
+          setCurrentUser(null);
+          setIsReady(true);
+        }
+      }
+    }
+
+    resolveSession();
+    return () => {
+      cancelled = true;
     };
-  };
+  }, []);
 
-  const executeBulkIngest = (validRows: BulkIngestRow[]) => {
-    let inserted = 0;
-    const newStudents: ActiveStudent[] = [];
+  // Pull the scoped academy data once the session is known.
+  useEffect(() => {
+    if (!session) return;
+    void refreshFromServer(true);
+  }, [session, refreshFromServer]);
 
-    validRows.forEach((row, i) => {
-      const names = (row.full_name || 'Athlete').trim().split(' ');
-      const firstName = names[0];
-      const lastName = names.slice(1).join(' ') || 'Student';
-      const nextCodeNum = activeStudents.length + archivedStudents.length + i + 1;
-      const formattedNum = String(nextCodeNum).padStart(3, '0');
-      const studentCode = `VEN-${formattedNum}`;
+  useEffect(() => {
+    if (!session) return;
 
-      let sports: string[] = [];
-      if (Array.isArray(row.enrolled_sports)) {
-        sports = row.enrolled_sports;
-      } else if (typeof row.enrolled_sports === 'string') {
-        sports = row.enrolled_sports.split(',').map((s) => s.trim());
+    const refresh = () => void refreshFromServer();
+    const interval = window.setInterval(refresh, 5000);
+    window.addEventListener('focus', refresh);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refresh);
+    };
+  }, [session, refreshFromServer]);
+
+  // Keep the client session in sync with the signed token.
+  useEffect(() => {
+    if (session) writeStorage(KEYS.session, session);
+  }, [session]);
+
+  const signIn = useCallback(
+    (payload: { user: User; token: string; expiresAt: number }) => {
+      const nextSession: SessionPayload = {
+        token: payload.token,
+        role: payload.user.role,
+        userId: payload.user.id,
+        name: payload.user.name,
+        issuedAt: Date.now(),
+        expiresAt: payload.expiresAt,
+      };
+      writeStorage(KEYS.token, payload.token);
+      writeStorage(KEYS.session, nextSession);
+      setSession(nextSession);
+      setCurrentUser(payload.user);
+    },
+    []
+  );
+
+  const signOut = useCallback(() => {
+    removeStorage(KEYS.session);
+    removeStorage(KEYS.token);
+    setSession(null);
+    setCurrentUser(null);
+    addToast({ type: 'info', title: 'Signed out', description: 'Your session has been closed.' });
+  }, []);
+
+  /* ---------------- toasts ---------------- */
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const addToast = useCallback(
+    (toast: Omit<ToastMessage, 'id' | 'timestamp'>) => {
+      const id = `toast-${Math.random().toString(36).substring(2, 9)}`;
+      setToasts((prev) => [{ ...toast, id, timestamp: new Date().toLocaleTimeString() }, ...prev].slice(0, 4));
+      setTimeout(() => removeToast(id), 4500);
+    },
+    [removeToast]
+  );
+
+  const sharedState = useMemo(
+    () => ({
+      students,
+      coaches,
+      enrollments,
+      coachAssignments,
+      attendance,
+      announcements,
+      archivedStudents,
+      facilities,
+      bookings,
+      coachAttendance,
+      invoices,
+      payroll,
+      broadcasts,
+      incidents,
+      media,
+    }),
+    [
+      students, coaches, enrollments, coachAssignments, attendance, announcements,
+      archivedStudents, facilities, bookings, coachAttendance, invoices, payroll,
+      broadcasts, incidents, media,
+    ]
+  );
+
+  useEffect(() => {
+    if (!isSharedStateReady.current || !currentRole) return;
+    const serialized = JSON.stringify(sharedState);
+    if (serialized === lastSharedState.current) return;
+
+    const timer = window.setTimeout(async () => {
+      const result = await apiPut('/api/state', { state: sharedState });
+      if (result.ok) {
+        lastSharedState.current = serialized;
       } else {
-        sports = ['Tennis'];
+        addToast({
+          type: 'error',
+          title: 'Shared save failed',
+          description: result.message,
+        });
       }
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [currentRole, sharedState, addToast]);
+
+  /* ---------------- role scoped data ---------------- */
+  const myStudent = useMemo(() => {
+    if (currentRole !== 'STUDENT' || !session) return null;
+    return students.find((s) => s.id === session.userId) ?? students.find((s) => s.id === currentUser?.studentId) ?? null;
+  }, [currentRole, session, students, currentUser]);
+
+  const myCoach = useMemo(() => {
+    if (currentRole !== 'COACH' || !session) return null;
+    return coaches.find((c) => c.userId === session.userId) ?? null;
+  }, [currentRole, session, coaches]);
+
+  const mySports = useMemo<SportId[]>(() => {
+    if (currentRole === 'ADMIN') return SPORTS.map((s) => s.id);
+    if (currentRole === 'COACH' && myCoach) {
+      return coachAssignments
+        .filter((a) => a.coachId === myCoach.id)
+        .map((a) => a.sportId)
+        .filter((id, index, list) => list.indexOf(id) === index);
+    }
+    if (currentRole === 'STUDENT' && myStudent) {
+      return enrollments
+        .filter((e) => e.studentId === myStudent.id && e.active)
+        .map((e) => e.sportId)
+        .filter((id, index, list) => list.indexOf(id) === index);
+    }
+    return [];
+  }, [currentRole, myCoach, myStudent, coachAssignments, enrollments]);
+
+  /** Students visible to the signed in role. */
+  const visibleStudents = useMemo(() => {
+    if (currentRole === 'ADMIN') return students;
+    if (currentRole === 'COACH' && myCoach) {
+      const sportIds = new Set(
+        coachAssignments.filter((a) => a.coachId === myCoach.id).map((a) => a.sportId)
+      );
+      const allowed = new Set(
+        enrollments.filter((e) => sportIds.has(e.sportId)).map((e) => e.studentId)
+      );
+      return students.filter((s) => allowed.has(s.id));
+    }
+    if (currentRole === 'STUDENT' && myStudent) return students.filter((s) => s.id === myStudent.id);
+    return [];
+  }, [currentRole, myCoach, myStudent, students, coachAssignments, enrollments]);
+
+  const studentsForSport = useCallback(
+    (sportId: SportId) => {
+      const enrolled = new Set(
+        enrollments.filter((e) => e.sportId === sportId && e.active).map((e) => e.studentId)
+      );
+      return visibleStudents.filter((s) => enrolled.has(s.id));
+    },
+    [enrollments, visibleStudents]
+  );
+
+  const sportNamesForStudent = useCallback(
+    (studentId: string) =>
+      enrollments
+        .filter((e) => e.studentId === studentId && e.active)
+        .map((e) => SPORTS.find((s) => s.id === e.sportId)?.name ?? e.sportId),
+    [enrollments]
+  );
+
+  /* ---------------- attendance ---------------- */
+  const attendanceForDate = useCallback(
+    (date: string, sportId?: SportId) =>
+      attendance.filter((a) => a.date === date && (!sportId || a.sportId === sportId)),
+    [attendance]
+  );
+
+  const markAttendance = useCallback(
+    async (
+      date: string,
+      sportId: SportId,
+      entries: Array<{ studentId: string; status: AttendanceStatus }>
+    ) => {
+      if (currentRole === 'STUDENT') {
+        return { success: false, message: 'Students cannot mark attendance.' };
+      }
+      if (currentRole === 'COACH' && !mySports.includes(sportId)) {
+        return { success: false, message: 'You can only mark attendance for your assigned sports.' };
+      }
+      if (entries.length === 0) {
+        return { success: false, message: 'There is nothing to save.' };
+      }
+
+      // The server is the source of truth: it re-checks the role, the coach
+      // assignment and the enrolment before it writes anything.
+      const result = await apiPost<{ records: AttendanceRecord[] }>('/api/attendance', {
+        date,
+        sportId,
+        entries,
+      });
+
+      if (!result.ok || !result.data) {
+        return { success: false, message: result.message };
+      }
+
+      const records = result.data.records;
+      setAttendance((prev) => {
+        const others = prev.filter((a) => !(a.date === date && a.sportId === sportId));
+        return [...others, ...records];
+      });
+
+      return {
+        success: true,
+        message: result.message || `Saved ${entries.length} records for ${date}.`,
+      };
+    },
+    [currentRole, mySports]
+  );
+
+  const markAllPresent = useCallback(
+    async (date: string, sportId: SportId) => {
+      if (currentRole === 'STUDENT') {
+        return { success: false, message: 'Students cannot mark attendance.' };
+      }
+      if (currentRole === 'COACH' && !mySports.includes(sportId)) {
+        return { success: false, message: 'You can only mark attendance for your assigned sports.' };
+      }
+      const studentIds = studentsForSport(sportId).map((s) => s.id);
+      if (studentIds.length === 0) {
+        return { success: false, message: 'No students are enrolled for this sport.' };
+      }
+      return markAttendance(
+        date,
+        sportId,
+        studentIds.map((studentId) => ({ studentId, status: 'present' as AttendanceStatus }))
+      );
+    },
+    [currentRole, mySports, studentsForSport, markAttendance]
+  );
+
+  const studentAttendanceSummary = useCallback(
+    (studentId: string, month?: string): StudentAttendanceSummary => {
+      const scoped = attendance.filter((a) => {
+        if (a.studentId !== studentId) return false;
+        if (!month) return true;
+        return a.date.startsWith(month);
+      });
+
+      const present = scoped.filter((a) => a.status === 'present').length;
+      const absent = scoped.filter((a) => a.status === 'absent').length;
+      const total = present + absent;
+
+      return {
+        studentId,
+        present,
+        absent,
+        total,
+        percentage: total === 0 ? 0 : Math.round((present / total) * 100),
+        byDate: scoped
+          .slice()
+          .sort((a, b) => (a.date < b.date ? 1 : -1))
+          .map((a) => ({ date: a.date, sportId: a.sportId, status: a.status })),
+      };
+    },
+    [attendance]
+  );
+
+  /* ---------------- directory mutations ---------------- */
+  const addActiveStudent = useCallback(
+    (studentData: Partial<ActiveStudent>): ActiveStudent => {
+      const nextCodeNum = students.length + archivedStudents.length + 1;
+      const formattedNum = String(nextCodeNum).padStart(3, '0');
 
       const newStudent: ActiveStudent = {
-        id: `stu-bulk-${Date.now()}-${i}`,
-        studentCode,
+        id: `stu-active-${Date.now()}`,
+        studentCode: `VEN-${formattedNum}`,
         loginId: formattedNum,
         password: 'vendhan',
-        parentUserId: 'user-parent-1',
-        parentName: row.parent_name || 'Parent Guardian',
-        parentPhone: row.parent_phone || '+19876543210',
-        parentEmail: row.parent_email || 'parent@example.com',
-        firstName,
-        lastName,
-        dob: row.dob || '2013-05-10',
-        gender: 'Male',
-        residentialAddress: 'Academy District',
+        parentUserId: studentData.parentUserId || 'user-parent-1',
+        parentName: studentData.parentName || 'Parent Guardian',
+        parentPhone: studentData.parentPhone || '+19876543210',
+        parentEmail: studentData.parentEmail || 'parent@example.com',
+        firstName: studentData.firstName || 'Student',
+        lastName: studentData.lastName || 'Athlete',
+        dob: studentData.dob || '2014-01-01',
+        gender: studentData.gender || 'Male',
+        residentialAddress: studentData.residentialAddress || '742 Academy Drive',
         photoUrl:
+          studentData.photoUrl ||
           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-        bloodGroup: (row.blood_group?.trim().toUpperCase() as BloodGroup) || 'O+',
-        medicalNotes: row.medical_notes || 'No restrictions logged during bulk import.',
-        chronicAilments: [],
+        bloodGroup: (studentData.bloodGroup as BloodGroup) || 'O+',
+        medicalNotes: studentData.medicalNotes || 'No chronic restrictions.',
+        chronicAilments: studentData.chronicAilments || [],
+        allergies: studentData.allergies || [],
+        emergencyDoctorContact: studentData.emergencyDoctorContact || {
+          name: 'Academy Medical Desk',
+          phone: '+15559870000',
+          clinic: 'West Hills Sports Medicine',
+        },
+        digitalLiabilityWaiverSigned: studentData.digitalLiabilityWaiverSigned ?? true,
+        waiverSignedDate: new Date().toISOString().split('T')[0],
+        batchShift: studentData.batchShift || 'Morning 06:00 - 08:00 Squad',
+        primaryAssignedCoachId: studentData.primaryAssignedCoachId || 'coach-1',
+        primaryAssignedCoachName: studentData.primaryAssignedCoachName || 'Elena Rostova',
+        dateOfJoining: studentData.dateOfJoining || new Date().toISOString().split('T')[0],
+        isActive: true,
+        achievements: studentData.achievements || [],
+        skillRatings: studentData.skillRatings || {
+          stamina: 3,
+          agility: 3,
+          technique: 3,
+          discipline: 3,
+          lastUpdated: new Date().toISOString().split('T')[0],
+          updatedByCoachName: 'Academy Staff',
+          badges: ['Newly enrolled'],
+          coachFeedbackNotes: 'Baseline assessment pending.',
+        },
+      };
+
+      setStudents((prev) => [newStudent, ...prev]);
+      addToast({
+        type: 'success',
+        title: 'Student registered',
+        description: `Assigned ID ${newStudent.studentCode} to ${newStudent.firstName} ${newStudent.lastName}.`,
+      });
+      return newStudent;
+    },
+    [students, archivedStudents, addToast]
+  );
+
+  const updateActiveStudent = useCallback(
+    (id: string, updates: Partial<ActiveStudent>) => {
+      if (currentRole !== 'ADMIN') {
+        addToast({ type: 'error', title: 'Access denied', description: 'Only administrators can edit student profiles.' });
+        return;
+      }
+      setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+      addToast({ type: 'success', title: 'Profile updated', description: 'Changes saved.' });
+    },
+    [currentRole, addToast]
+  );
+
+  const updateCoachProfile = useCallback(
+    (id: string, updates: Pick<Coach, 'bio' | 'phone' | 'certification'>) => {
+      if (currentRole !== 'ADMIN' && (currentRole !== 'COACH' || myCoach?.id !== id)) {
+        addToast({ type: 'error', title: 'Access denied', description: 'You may only edit your own coach profile.' });
+        return;
+      }
+      setCoaches((prev) => prev.map((coach) => coach.id === id ? { ...coach, ...updates } : coach));
+      addToast({ type: 'success', title: 'Coach profile updated', description: 'Changes are being saved to the shared academy record.' });
+    },
+    [currentRole, myCoach, addToast]
+  );
+
+  const archiveStudent = useCallback(
+    (studentId: string, reason: ArchivedStudent['archivalReason'], exitNotes?: string) => {
+      if (currentRole !== 'ADMIN') {
+        addToast({ type: 'error', title: 'Access denied', description: 'Only admins can archive students.' });
+        return;
+      }
+      const student = students.find((s) => s.id === studentId);
+      if (!student) return;
+
+      const currentYear = new Date().getFullYear();
+      const sportIds = enrollments.filter((e) => e.studentId === studentId).map((e) => e.sportId);
+
+      const archived: ArchivedStudent = {
+        id: `arch-${Date.now()}`,
+        originalStudentId: student.id,
+        studentCode: student.studentCode,
+        fullName: `${student.firstName} ${student.lastName}`,
+        parentDetails: {
+          name: student.parentName,
+          phone: student.parentPhone,
+          email: student.parentEmail,
+        },
+        medicalHistory: {
+          bloodGroup: student.bloodGroup,
+          notes: student.medicalNotes,
+          chronicAilments: student.chronicAilments,
+        },
+        enrolledSports: sportIds,
+        achievements: student.achievements,
+        cohortYears: `${student.dateOfJoining.slice(0, 4)}-${currentYear}`,
+        archivalReason: reason,
+        exitNotes: exitNotes || `Archived due to ${reason}.`,
+        archivedAt: new Date().toISOString(),
+        archivedBy: `${currentUser?.name ?? 'Admin'} (ADMIN)`,
+      };
+
+      setStudents((prev) => prev.filter((s) => s.id !== studentId));
+      setArchivedStudents((prev) => [archived, ...prev]);
+      addToast({
+        type: 'warning',
+        title: 'Student archived',
+        description: `${student.firstName} ${student.lastName} moved to the archive vault.`,
+      });
+    },
+    [currentRole, students, enrollments, archivedStudents, currentUser, addToast]
+  );
+
+  const restoreArchivedStudent = useCallback(
+    (archivedId: string) => {
+      if (currentRole !== 'ADMIN') {
+        addToast({ type: 'error', title: 'Access denied', description: 'Only admins can restore students.' });
+        return;
+      }
+      const record = archivedStudents.find((a) => a.id === archivedId);
+      if (!record) return;
+
+      const names = record.fullName.split(' ');
+      const restored: ActiveStudent = {
+        id: record.originalStudentId || `stu-restored-${Date.now()}`,
+        studentCode: record.studentCode,
+        loginId: record.studentCode.replace('VEN-', ''),
+        password: undefined,
+        parentUserId: 'user-parent-1',
+        parentName: record.parentDetails.name,
+        parentPhone: record.parentDetails.phone,
+        parentEmail: record.parentDetails.email,
+        firstName: names[0],
+        lastName: names.slice(1).join(' ') || 'Athlete',
+        dob: '2013-06-15',
+        gender: 'Male',
+        residentialAddress: '742 Academy Drive',
+        photoUrl:
+          'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&auto=format&fit=crop&q=80',
+        bloodGroup: (record.medicalHistory.bloodGroup as BloodGroup) || 'O+',
+        medicalNotes: record.medicalHistory.notes || 'No chronic restrictions.',
+        chronicAilments: record.medicalHistory.chronicAilments || [],
         allergies: [],
         emergencyDoctorContact: {
           name: 'Academy Medical Desk',
           phone: '+15559870000',
-          clinic: 'Apex Sports Clinic',
+          clinic: 'West Hills Sports Medicine',
         },
         digitalLiabilityWaiverSigned: true,
         waiverSignedDate: new Date().toISOString().split('T')[0],
-        enrolledSports: sports,
         batchShift: 'Morning 06:00 - 08:00 Squad',
         primaryAssignedCoachId: 'coach-1',
         primaryAssignedCoachName: 'Elena Rostova',
-        dateOfJoining: row.date_of_joining || new Date().toISOString().split('T')[0],
+        dateOfJoining: new Date().toISOString().split('T')[0],
         isActive: true,
-        achievements: (row.achievements || []).map((a, idx) => ({
-          id: `ach-bulk-${Date.now()}-${idx}`,
-          studentId: '',
-          title: a.title,
-          sport: a.sport,
-          category: 'Tournament',
-          description: `Imported record: ${a.title} (${a.year})`,
-          awardedDate: `${a.year}-06-01`,
-          coachName: 'Apex Academy Staff',
-          medalType: 'Badge',
-        })),
+        achievements: record.achievements || [],
         skillRatings: {
-          stamina: 3,
-          agility: 3,
-          technique: 3,
+          stamina: 4,
+          agility: 4,
+          technique: 4,
           discipline: 4,
           lastUpdated: new Date().toISOString().split('T')[0],
-          updatedByCoachName: 'Elena Rostova',
-          badges: ['Ingested Athlete'],
-          coachFeedbackNotes: 'Imported via Bulk Ingestion Pipeline.',
+          updatedByCoachName: 'Academy Staff',
+          badges: ['Re-admitted'],
+          coachFeedbackNotes: 'Re-admitted to the active training schedule.',
         },
       };
 
-      newStudents.push(newStudent);
-      inserted++;
-    });
+      setArchivedStudents((prev) => prev.filter((a) => a.id !== archivedId));
+      setStudents((prev) => [restored, ...prev]);
+      setEnrollmentsState((prev) => [
+        ...prev,
+        ...record.enrolledSports.map((sportId, index) => ({
+          id: `en-${Date.now()}-${index}`,
+          studentId: restored.id,
+          sportId,
+          joinedAt: new Date().toISOString().split('T')[0],
+          active: true,
+        })),
+      ]);
+      addToast({ type: 'success', title: 'Student restored', description: `${restored.firstName} is active again.` });
+    },
+    [currentRole, archivedStudents, addToast]
+  );
 
-    setActiveStudents((prev) => [...newStudents, ...prev]);
-    addToast({
-      type: 'success',
-      title: 'Bulk Ingestion Complete',
-      description: `Successfully inserted ${inserted} student records into Active Directory with verified schemas.`,
-    });
+  const setEnrollments = useCallback(
+    (studentId: string, sportIds: SportId[]) => {
+      if (currentRole !== 'ADMIN') {
+        addToast({ type: 'error', title: 'Access denied', description: 'Only admins can change enrolments.' });
+        return;
+      }
+      setEnrollmentsState((prev) => {
+        const others = prev.filter((e) => e.studentId !== studentId);
+        const added = sportIds.map(
+          (sportId, index) =>
+            ({
+              id: `en-${studentId}-${sportId}-${index}`,
+              studentId,
+              sportId,
+              joinedAt: new Date().toISOString().split('T')[0],
+              active: true,
+            }) as Enrollment
+        );
+        return [...others, ...added];
+      });
+      addToast({ type: 'success', title: 'Enrolment updated', description: 'Sport list saved.' });
+    },
+    [currentRole, addToast]
+  );
 
-    return { inserted, errors: 0 };
-  };
+  /* ---------------- bulk ingestion ---------------- */
+  const validateBulkIngestionData = useCallback(
+    (rows: BulkIngestRow[]) => {
+      const issues: IngestValidationIssue[] = [];
+      const validRows: BulkIngestRow[] = [];
+      const validBloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+      const existingPhones = new Set(students.map((s) => s.parentPhone.replace(/\D/g, '')));
+      const rowPhones = new Set<string>();
 
-  // Student Attendance
-  const markBatchStudentAttendance = (
-    records: Array<{ studentId: string; status: AttendanceStatus; notes?: string }>,
-    batchName: string,
-    sport: string
-  ) => {
-    const today = new Date().toISOString().split('T')[0];
-    const newRecords: StudentAttendanceRecord[] = records.map((rec) => {
-      const student = activeStudents.find((s) => s.id === rec.studentId);
+      rows.forEach((row, index) => {
+        const rowNum = index + 1;
+        let hasError = false;
+
+        if (!row.full_name || row.full_name.trim().length < 2) {
+          issues.push({
+            row: rowNum,
+            field: 'full_name',
+            message: 'Full name is required.',
+            severity: 'error',
+            valueProvided: row.full_name,
+          });
+          hasError = true;
+        }
+
+        if (!row.dob || isNaN(Date.parse(row.dob))) {
+          issues.push({
+            row: rowNum,
+            field: 'dob',
+            message: 'Date of birth must be a valid date (YYYY-MM-DD).',
+            severity: 'error',
+            valueProvided: row.dob,
+          });
+          hasError = true;
+        }
+
+        if (!row.blood_group || !validBloodGroups.includes(row.blood_group.trim().toUpperCase())) {
+          issues.push({
+            row: rowNum,
+            field: 'blood_group',
+            message: `Invalid blood group. Allowed: ${validBloodGroups.join(', ')}`,
+            severity: 'error',
+            valueProvided: row.blood_group,
+          });
+          hasError = true;
+        }
+
+        if (!row.parent_phone || row.parent_phone.trim().length < 7) {
+          issues.push({
+            row: rowNum,
+            field: 'parent_phone',
+            message: 'Parent phone is required for emergency alerts.',
+            severity: 'error',
+            valueProvided: row.parent_phone,
+          });
+          hasError = true;
+        } else {
+          const clean = row.parent_phone.replace(/\D/g, '');
+          if (existingPhones.has(clean) || rowPhones.has(clean)) {
+            issues.push({
+              row: rowNum,
+              field: 'parent_phone',
+              message: 'Duplicate parent phone number.',
+              severity: 'warning',
+              valueProvided: row.parent_phone,
+            });
+          }
+          rowPhones.add(clean);
+        }
+
+        const sports = Array.isArray(row.enrolled_sports)
+          ? row.enrolled_sports
+          : typeof row.enrolled_sports === 'string'
+            ? row.enrolled_sports.split(',').map((s) => s.trim())
+            : [];
+
+        const validSports = sports.filter((s): s is SportId => isSportId(s));
+        if (validSports.length === 0) {
+          issues.push({
+            row: rowNum,
+            field: 'enrolled_sports',
+            message: `Pick at least one of: ${SPORTS.map((s) => s.name).join(', ')}.`,
+            severity: 'error',
+          });
+          hasError = true;
+        } else if (validSports.length !== sports.length) {
+          issues.push({
+            row: rowNum,
+            field: 'enrolled_sports',
+            message: 'Some sports are not offered by the academy and were dropped.',
+            severity: 'warning',
+          });
+        }
+
+        if (!hasError) validRows.push({ ...row, enrolled_sports: validSports });
+      });
+
       return {
-        id: `att-${Date.now()}-${rec.studentId}`,
-        date: today,
-        studentId: rec.studentId,
-        studentName: student ? `${student.firstName} ${student.lastName}` : 'Student',
-        batchName,
-        sport,
-        status: rec.status,
-        markedByCoachId: currentUser.coachId || 'coach-1',
-        markedByCoachName: currentUser.name,
-        markedAt: new Date().toISOString(),
-        notes: rec.notes,
+        validCount: validRows.length,
+        errorCount: rows.length - validRows.length,
+        issues,
+        validRows,
       };
-    });
+    },
+    [students]
+  );
 
-    // Remove duplicates for today + batch
-    setStudentAttendance((prev) => [
-      ...newRecords,
-      ...prev.filter(
-        (p) =>
-          !(
-            p.date === today &&
-            records.some((r) => r.studentId === p.studentId)
-          )
-      ),
-    ]);
+  const executeBulkIngest = useCallback(
+    async (validRows: BulkIngestRow[]) => {
+      let inserted = 0;
+      let errors = 0;
+      const credentials: Array<{ studentCode: string; username: string; password: string }> = [];
 
-    addToast({
-      type: 'success',
-      title: 'Attendance Saved',
-      description: `Marked attendance for ${records.length} students in ${batchName}.`,
-    });
-  };
-
-  // Coach Attendance (Geofenced Check-in / Out)
-  const recordCoachCheckIn = (
-    coachId: string,
-    sessionType: 'Batch Training' | 'Private Coaching' | 'Clinic'
-  ) => {
-    const coach = coaches.find((c) => c.id === coachId);
-    if (!coach) return;
-
-    // Simulate GPS geofence calculation within 100 meters
-    const simulatedDistance = Math.floor(Math.random() * 60) + 15;
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const today = now.toISOString().split('T')[0];
-
-    const newRecord: CoachAttendanceRecord = {
-      id: `coach-att-${Date.now()}`,
-      coachId,
-      coachName: coach.name,
-      date: today,
-      checkInTime: timeStr,
-      geofenceVerified: true,
-      distanceFromAcademyMeters: simulatedDistance,
-      sessionType,
-      isVerifiedForPayroll: true,
-    };
-
-    setCoachAttendance((prev) => [newRecord, ...prev]);
-
-    // Update coach verified sessions
-    setCoaches((prev) =>
-      prev.map((c) =>
-        c.id === coachId
-          ? {
-              ...c,
-              isCheckedInToday: true,
-              lastCheckInTime: timeStr,
-              verifiedSessionsThisMonth: c.verifiedSessionsThisMonth + 1,
-            }
-          : c
-      )
-    );
-
-    // Update payroll record
-    setPayroll((prev) =>
-      prev.map((p) => {
-        if (p.coachId === coachId) {
-          const newSessions = p.verifiedSessions + 1;
-          const newPayout = newSessions * p.perSessionRate;
-          return {
-            ...p,
-            verifiedSessions: newSessions,
-            totalSessionPayout: newPayout,
-            totalDisbursed: p.baseSalary + newPayout + p.bonuses,
-          };
+      for (const row of validRows) {
+        const nameParts = (row.full_name || 'Athlete').trim().split(/\s+/);
+        const result = await apiPost<{
+          student: { studentCode: string };
+          credentials?: { username: string; password: string };
+        }>('/api/students', {
+          firstName: nameParts[0],
+          lastName: nameParts.slice(1).join(' ') || 'Student',
+          dob: row.dob,
+          bloodGroup: row.blood_group?.toUpperCase(),
+          medicalNotes: row.medical_notes,
+          parentName: row.parent_name,
+          parentPhone: row.parent_phone,
+          parentEmail: row.parent_email,
+          dateOfJoining: row.date_of_joining,
+          sportIds: Array.isArray(row.enrolled_sports) ? row.enrolled_sports : [],
+        });
+        if (!result.ok || !result.data) {
+          errors += 1;
+          continue;
         }
-        return p;
-      })
-    );
-
-    addToast({
-      type: 'success',
-      title: 'Geofence Verified Check-in',
-      description: `${coach.name} checked in (${simulatedDistance}m from Academy grounds). Verified for payroll engine.`,
-    });
-  };
-
-  const recordCoachCheckOut = (coachId: string) => {
-    const coach = coaches.find((c) => c.id === coachId);
-    if (!coach) return;
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    setCoaches((prev) =>
-      prev.map((c) => (c.id === coachId ? { ...c, isCheckedInToday: false } : c))
-    );
-
-    setCoachAttendance((prev) =>
-      prev.map((a) =>
-        a.coachId === coachId && !a.checkOutTime ? { ...a, checkOutTime: timeStr } : a
-      )
-    );
-
-    addToast({
-      type: 'info',
-      title: 'Coach Check-out Logged',
-      description: `${coach.name} completed shift at ${timeStr}.`,
-    });
-  };
-
-  // Skill & Incident Updates
-  const updateStudentSkills = (studentId: string, skills: Partial<SkillRating>) => {
-    setActiveStudents((prev) =>
-      prev.map((s) => {
-        if (s.id === studentId) {
-          return {
-            ...s,
-            skillRatings: {
-              ...s.skillRatings,
-              ...skills,
-              lastUpdated: new Date().toISOString().split('T')[0],
-              updatedByCoachName: currentUser.name,
-            },
-          };
+        inserted += 1;
+        if (result.data.credentials) {
+          credentials.push({
+            studentCode: result.data.student.studentCode,
+            ...result.data.credentials,
+          });
         }
-        return s;
-      })
-    );
+      }
 
-    addToast({
-      type: 'success',
-      title: 'Skill Matrix Updated',
-      description: 'Ratings (Stamina, Agility, Technique, Discipline) recalculated.',
-    });
-  };
+      await refreshFromServer();
+      addToast({
+        type: errors ? 'warning' : 'success',
+        title: 'Import finished',
+        description: `${inserted} student records created; ${errors} failed.`,
+      });
+      return { inserted, errors, credentials };
+    },
+    [refreshFromServer, addToast]
+  );
 
-  const awardStudentAchievement = (
-    studentId: string,
-    achievement: Omit<Achievement, 'id' | 'studentId'>
-  ) => {
-    const newAchievement: Achievement = {
-      ...achievement,
-      id: `ach-${Date.now()}`,
-      studentId,
-    };
+  /* ---------------- coach actions ---------------- */
+  const markBatchStudentAttendance = useCallback(
+    async (
+      records: Array<{ studentId: string; status: AttendanceStatus; notes?: string }>,
+      batchName: string,
+      sportId: SportId
+    ) => {
+      const today = toISODate(new Date());
+      const result = await markAttendance(
+        today,
+        sportId,
+        records.map((r) => ({ studentId: r.studentId, status: r.status }))
+      );
+      if (result.success) {
+        addToast({
+          type: 'success',
+          title: 'Attendance saved',
+          description: `${records.length} students marked for ${batchName}.`,
+        });
+      }
+      return result;
+    },
+    [markAttendance, addToast]
+  );
 
-    setActiveStudents((prev) =>
-      prev.map((s) => {
-        if (s.id === studentId) {
-          return {
-            ...s,
-            achievements: [newAchievement, ...s.achievements],
-          };
-        }
-        return s;
-      })
-    );
+  const recordCoachCheckIn = useCallback(
+    (coachId: string, sessionType: 'Batch Training' | 'Private Coaching' | 'Clinic') => {
+      if (currentRole !== 'COACH' || myCoach?.id !== coachId) {
+        addToast({ type: 'error', title: 'Access denied', description: 'Only the signed-in coach can record a shift check-in.' });
+        return;
+      }
+      const coach = coaches.find((c) => c.id === coachId);
+      if (!coach) return;
 
-    addToast({
-      type: 'success',
-      title: 'Achievement Bestowed!',
-      description: `Awarded "${achievement.title}" to student profile.`,
-    });
-  };
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const today = toISODate(new Date());
 
-  const createIncidentReport = (
-    incident: Omit<IncidentReport, 'id' | 'timestamp' | 'parentNotified' | 'parentNotificationSentAt'>
-  ) => {
-    const newReport: IncidentReport = {
-      ...incident,
-      id: `inc-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      parentNotified: true,
-      parentNotificationSentAt: new Date().toISOString(),
-    };
+      setCoachAttendance((prev) => [
+        {
+          id: `coach-att-${Date.now()}`,
+          coachId,
+          coachName: coach.name,
+          date: today,
+          checkInTime: timeStr,
+          geofenceVerified: false,
+          distanceFromAcademyMeters: 0,
+          sessionType,
+          isVerifiedForPayroll: false,
+        },
+        ...prev,
+      ]);
 
-    setIncidents((prev) => [newReport, ...prev]);
+      setCoaches((prev) =>
+        prev.map((c) =>
+          c.id === coachId
+            ? {
+                ...c,
+                isCheckedInToday: true,
+                lastCheckInTime: timeStr,
+              }
+            : c
+        )
+      );
 
-    addToast({
-      type: 'warning',
-      title: `Incident Logged (${incident.severity} Severity)`,
-      description: `Report filed for ${incident.studentName}. WhatsApp alert dispatched to primary guardian.`,
-    });
-  };
+      addToast({
+        type: 'info',
+        title: 'Check-in recorded',
+        description: 'Location verification is not configured; this check-in is not verified for payroll.',
+      });
+    },
+    [currentRole, myCoach, coaches, addToast]
+  );
 
-  // Facility Bookings
-  const createBooking = (
-    booking: Omit<FacilityBooking, 'id' | 'createdAt' | 'status'>
-  ): { success: boolean; message: string } => {
-    // Conflict detection
-    const conflict = bookings.find(
-      (b) =>
-        b.facilityId === booking.facilityId &&
-        b.date === booking.date &&
-        b.status !== 'CANCELLED' &&
-        ((booking.startTime >= b.startTime && booking.startTime < b.endTime) ||
-          (booking.endTime > b.startTime && booking.endTime <= b.endTime) ||
-          (booking.startTime <= b.startTime && booking.endTime >= b.endTime))
-    );
+  const recordCoachCheckOut = useCallback(
+    (coachId: string) => {
+      if (currentRole !== 'COACH' || myCoach?.id !== coachId) {
+        addToast({ type: 'error', title: 'Access denied', description: 'Only the signed-in coach can record a shift check-out.' });
+        return;
+      }
+      const coach = coaches.find((c) => c.id === coachId);
+      if (!coach) return;
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    if (conflict && currentRole !== 'ADMIN') {
-      return {
-        success: false,
-        message: `Slot Conflict: ${conflict.facilityName} is already booked from ${conflict.startTime} to ${conflict.endTime} by ${conflict.bookedByName}.`,
+      setCoaches((prev) => prev.map((c) => (c.id === coachId ? { ...c, isCheckedInToday: false } : c)));
+      setCoachAttendance((prev) =>
+        prev.map((a) => (a.coachId === coachId && !a.checkOutTime ? { ...a, checkOutTime: timeStr } : a))
+      );
+      addToast({ type: 'info', title: 'Checked out', description: `${coach.name} ended the shift at ${timeStr}.` });
+    },
+    [currentRole, myCoach, coaches, addToast]
+  );
+
+  const updateStudentSkills = useCallback(
+    (studentId: string, skills: Partial<ActiveStudent['skillRatings']>) => {
+      if (currentRole !== 'COACH') {
+        addToast({ type: 'error', title: 'Access denied', description: 'Only coaches can update skill ratings.' });
+        return;
+      }
+      setStudents((prev) =>
+        prev.map((s) =>
+          s.id === studentId
+            ? {
+                ...s,
+                skillRatings: {
+                  ...s.skillRatings,
+                  ...skills,
+                  lastUpdated: toISODate(new Date()),
+                  updatedByCoachName: currentUser?.name ?? 'Academy Staff',
+                },
+              }
+            : s
+        )
+      );
+      addToast({ type: 'success', title: 'Skill matrix updated', description: 'Ratings recalculated.' });
+    },
+    [currentRole, currentUser, addToast]
+  );
+
+  const awardStudentAchievement = useCallback(
+    (studentId: string, achievement: Omit<ActiveStudent['achievements'][number], 'id' | 'studentId'>) => {
+      if (currentRole !== 'COACH') {
+        addToast({ type: 'error', title: 'Access denied', description: 'Only coaches can award student achievements.' });
+        return;
+      }
+      setStudents((prev) =>
+        prev.map((s) =>
+          s.id === studentId
+            ? {
+                ...s,
+                achievements: [
+                  { ...achievement, id: `ach-${Date.now()}`, studentId },
+                  ...s.achievements,
+                ],
+              }
+            : s
+        )
+      );
+      addToast({
+        type: 'success',
+        title: 'Achievement awarded',
+        description: `“${achievement.title}” added to the student profile.`,
+      });
+    },
+    [currentRole, addToast]
+  );
+
+  const createIncidentReport = useCallback(
+    (incident: Omit<IncidentReport, 'id' | 'timestamp' | 'parentNotified' | 'parentNotificationSentAt'>) => {
+      setIncidents((prev) => [
+        {
+          ...incident,
+          id: `inc-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          parentNotified: false,
+        },
+        ...prev,
+      ]);
+      addToast({
+        type: 'warning',
+        title: `Incident logged (${incident.severity})`,
+        description: `Report filed for ${incident.studentName}. Guardian notification was not sent.`,
+      });
+    },
+    [addToast]
+  );
+
+  /* ---------------- facilities, finance, broadcast, media ---------------- */
+  const createBooking = useCallback(
+    (booking: Omit<FacilityBooking, 'id' | 'createdAt' | 'status'>) => {
+      if (!currentUser || !currentRole) {
+        return { success: false, message: 'Sign in before booking a facility.' };
+      }
+      if (booking.startTime >= booking.endTime || booking.date < toISODate(new Date())) {
+        return { success: false, message: 'Choose a valid future date and time range.' };
+      }
+      const conflict = bookings.find(
+        (b) =>
+          b.facilityId === booking.facilityId &&
+          b.date === booking.date &&
+          b.status !== 'CANCELLED' &&
+          ((booking.startTime >= b.startTime && booking.startTime < b.endTime) ||
+            (booking.endTime > b.startTime && booking.endTime <= b.endTime) ||
+            (booking.startTime <= b.startTime && booking.endTime >= b.endTime))
+      );
+
+      if (conflict) {
+        return {
+          success: false,
+          message: `Slot taken: ${conflict.facilityName} is booked ${conflict.startTime} - ${conflict.endTime}.`,
+        };
+      }
+
+      setBookings((prev) => [
+        {
+          ...booking,
+          bookedByUserId: currentUser.id,
+          bookedByName: currentUser.name,
+          bookedByRole: currentRole,
+          id: `book-${Date.now()}`,
+          status: 'CONFIRMED',
+          createdAt: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+      addToast({
+        type: 'success',
+        title: 'Slot booked',
+        description: `${booking.facilityName} on ${booking.date}, ${booking.startTime} - ${booking.endTime}.`,
+      });
+      return { success: true, message: 'Reservation confirmed.' };
+    },
+    [bookings, currentRole, currentUser, addToast]
+  );
+
+  const cancelBooking = useCallback(
+    (bookingId: string) => {
+      const booking = bookings.find((item) => item.id === bookingId);
+      if (!booking || (currentRole !== 'ADMIN' && booking.bookedByUserId !== currentUser?.id)) {
+        addToast({ type: 'error', title: 'Cannot cancel booking', description: 'You can only cancel your own bookings.' });
+        return;
+      }
+      setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, status: 'CANCELLED' } : b)));
+      addToast({ type: 'info', title: 'Booking cancelled', description: 'The slot is free again.' });
+    },
+    [bookings, currentRole, currentUser, addToast]
+  );
+
+  const payInvoice = useCallback(
+    async (invoiceId: string) => {
+      const result = await apiPost<{ checkoutUrl: string }>('/api/payments/checkout', { invoiceId });
+      if (!result.ok || !result.data) {
+        addToast({ type: 'error', title: 'Payment unavailable', description: result.message });
+        return;
+      }
+      window.location.assign(result.data.checkoutUrl);
+    },
+    [addToast]
+  );
+
+  const sendWhatsAppPaymentReminder = useCallback(
+    async (invoiceId: string) => {
+      const invoice = invoices.find((i) => i.id === invoiceId);
+      if (!invoice) return;
+      const result = await apiPost<{ message: string }>('/api/payments/reminder', { invoiceId });
+      if (!result.ok || !result.data) {
+        addToast({ type: 'error', title: 'Reminder not sent', description: result.message });
+        return;
+      }
+      addToast({
+        type: 'success',
+        title: 'Reminder submitted',
+        description: result.data.message,
+      });
+      await refreshFromServer();
+    },
+    [invoices, addToast, refreshFromServer]
+  );
+
+  const generateNewInvoice = useCallback(
+    (invoice: Omit<StudentInvoice, 'id' | 'invoiceNumber'>) => {
+      if (currentRole !== 'ADMIN') {
+        addToast({ type: 'error', title: 'Access denied', description: 'Only administrators can create invoices.' });
+        return;
+      }
+      const newInvoice: StudentInvoice = {
+        ...invoice,
+        id: `inv-${Date.now()}`,
+        invoiceNumber: `INV-${new Date().getFullYear()}-${invoices.length + 1001}`,
       };
+      setInvoices((prev) => [newInvoice, ...prev]);
+      addToast({
+        type: 'success',
+        title: 'Invoice created',
+        description: `${newInvoice.invoiceNumber} for $${newInvoice.amount}.`,
+      });
+    },
+    [currentRole, invoices, addToast]
+  );
+
+  const markPayrollDisbursed = useCallback(
+    (payrollId: string) => {
+      if (currentRole !== 'ADMIN') {
+        addToast({ type: 'error', title: 'Access denied', description: 'Only administrators can manage payroll.' });
+        return;
+      }
+      setPayroll((prev) =>
+        prev.map((p) =>
+          p.id === payrollId
+            ? { ...p, status: 'DISBURSED', disbursementDate: toISODate(new Date()) }
+            : p
+        )
+      );
+      addToast({ type: 'success', title: 'Payroll disbursed', description: 'Payslips generated.' });
+    },
+    [currentRole, addToast]
+  );
+
+  const sendEmergencyBroadcast = useCallback(
+    async (broadcast: {
+      targetType: 'ALL_PARENTS' | 'SPORT' | 'BATCH';
+      targetValue?: string;
+      templateKey: EmergencyBroadcast['templateKey'];
+      templateTitle: string;
+      messageContent: string;
+      channel: 'WHATSAPP' | 'SMS_FALLBACK';
+    }) => {
+      if (currentRole !== 'ADMIN') {
+        addToast({ type: 'error', title: 'Access denied', description: 'Only administrators can prepare academy-wide broadcasts.' });
+        return false;
+      }
+      const result = await apiPost<{ message: string }>('/api/broadcasts', broadcast);
+      if (!result.ok || !result.data) {
+        addToast({ type: 'error', title: 'Broadcast failed', description: result.message });
+        return false;
+      }
+      addToast({ type: 'success', title: 'Broadcast submitted', description: result.data.message });
+      await refreshFromServer();
+      return true;
+    },
+    [currentRole, addToast, refreshFromServer]
+  );
+
+  const uploadMediaItem = useCallback(
+    (item: Omit<MediaItem, 'id' | 'uploadedAt' | 'isApproved'>) => {
+      setMedia((prev) => [
+        { ...item, id: `med-${Date.now()}`, uploadedAt: toISODate(new Date()), isApproved: currentRole === 'ADMIN' },
+        ...prev,
+      ]);
+      addToast({
+        type: 'success',
+        title: 'Media uploaded',
+        description: currentRole === 'ADMIN' ? 'Published to the gallery.' : 'Sent for admin approval.',
+      });
+    },
+    [currentRole, addToast]
+  );
+
+  const toggleApproveMedia = useCallback(
+    (mediaId: string) => {
+      if (currentRole !== 'ADMIN') {
+        addToast({ type: 'error', title: 'Access denied', description: 'Only administrators can approve media.' });
+        return;
+      }
+      setMedia((prev) => prev.map((m) => (m.id === mediaId ? { ...m, isApproved: !m.isApproved } : m)));
+      addToast({ type: 'info', title: 'Gallery updated', description: 'Visibility changed.' });
+    },
+    [currentRole, addToast]
+  );
+
+  const resetAllData = useCallback(async () => {
+    if (currentRole !== 'ADMIN') {
+      addToast({ type: 'error', title: 'Access denied', description: 'Only administrators can reset academy data.' });
+      return;
     }
+    // The server store is the source of truth, so it has to be reset first.
+    const result = await apiPost<unknown>('/api/reset', {});
 
-    const newBooking: FacilityBooking = {
-      ...booking,
-      id: `book-${Date.now()}`,
-      status: 'CONFIRMED',
-      createdAt: new Date().toISOString(),
-    };
-
-    setBookings((prev) => [newBooking, ...prev]);
-    addToast({
-      type: 'success',
-      title: 'Court / Facility Confirmed',
-      description: `Reserved ${booking.facilityName} on ${booking.date} (${booking.startTime} - ${booking.endTime}).`,
-    });
-
-    return { success: true, message: 'Reservation confirmed.' };
-  };
-
-  const cancelBooking = (bookingId: string) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === bookingId ? { ...b, status: 'CANCELLED' } : b))
-    );
-    addToast({
-      type: 'info',
-      title: 'Reservation Cancelled',
-      description: 'Court slot released for booking.',
-    });
-  };
-
-  // Fees & Invoices
-  const payInvoice = (invoiceId: string, paymentMethod: string) => {
-    const txId = `tx_${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-    setInvoices((prev) =>
-      prev.map((inv) =>
-        inv.id === invoiceId
-          ? {
-              ...inv,
-              status: 'PAID',
-              paidAt: new Date().toISOString(),
-              paymentMethod,
-              transactionId: txId,
-            }
-          : inv
-      )
-    );
-
-    addToast({
-      type: 'success',
-      title: 'Payment Processed Successfully',
-      description: `Receipt generated. Transaction ID: ${txId}.`,
-    });
-  };
-
-  const sendWhatsAppPaymentReminder = (invoiceId: string) => {
-    const invoice = invoices.find((i) => i.id === invoiceId);
-    if (!invoice) return;
-
-    addToast({
-      type: 'info',
-      title: 'WhatsApp Reminder Triggered',
-      description: `Payment link & invoice details sent to ${invoice.parentName} (${invoice.parentPhone}).`,
-    });
-  };
-
-  const generateNewInvoice = (invoice: Omit<StudentInvoice, 'id' | 'invoiceNumber'>) => {
-    const num = invoices.length + 1001;
-    const newInv: StudentInvoice = {
-      ...invoice,
-      id: `inv-${Date.now()}`,
-      invoiceNumber: `INV-2026-${num}`,
-    };
-    setInvoices((prev) => [newInv, ...prev]);
-    addToast({
-      type: 'success',
-      title: 'Invoice Generated',
-      description: `Created invoice ${newInv.invoiceNumber} for $${newInv.amount}.`,
-    });
-  };
-
-  const markPayrollDisbursed = (payrollId: string) => {
-    setPayroll((prev) =>
-      prev.map((p) =>
-        p.id === payrollId
-          ? { ...p, status: 'DISBURSED', disbursementDate: new Date().toISOString().split('T')[0] }
-          : p
-      )
-    );
-    addToast({
-      type: 'success',
-      title: 'Payroll Disbursed',
-      description: 'Funds cleared and payslips generated for coach accounts.',
-    });
-  };
-
-  // WhatsApp Emergency Broadcast Subsystem
-  const sendEmergencyBroadcast = (broadcast: {
-    targetType: 'ALL_PARENTS' | 'SPORT' | 'BATCH';
-    targetValue?: string;
-    templateKey: EmergencyBroadcast['templateKey'];
-    templateTitle: string;
-    messageContent: string;
-    channel: 'WHATSAPP' | 'SMS_FALLBACK';
-  }) => {
-    // Calculate recipients
-    let recipients = activeStudents.length;
-    if (broadcast.targetType === 'SPORT' && broadcast.targetValue) {
-      recipients = activeStudents.filter((s) => s.enrolledSports.includes(broadcast.targetValue!)).length;
-    } else if (broadcast.targetType === 'BATCH' && broadcast.targetValue) {
-      recipients = activeStudents.filter((s) => s.batchShift === broadcast.targetValue).length;
-    }
-    if (recipients === 0) recipients = 1;
-
-    const newBroadcast: EmergencyBroadcast = {
-      id: `bcast-${Date.now()}`,
-      senderName: `${currentUser.name} (${currentUser.role})`,
-      senderRole: currentUser.role,
-      targetCriteria: {
-        targetType: broadcast.targetType,
-        targetValue: broadcast.targetValue,
-      },
-      templateKey: broadcast.templateKey,
-      templateTitle: broadcast.templateTitle,
-      messageContent: broadcast.messageContent,
-      channel: broadcast.channel,
-      recipientCount: recipients,
-      deliveredCount: recipients,
-      readCount: Math.floor(recipients * 0.94),
-      sentAt: new Date().toISOString(),
-      deliveryStatus: 'DELIVERED',
-    };
-
-    setBroadcasts((prev) => [newBroadcast, ...prev]);
-    addToast({
-      type: 'warning',
-      title: '🚨 WhatsApp Emergency Broadcast Dispatched',
-      description: `Delivered to ${recipients} guardians using Meta HSM template "${broadcast.templateTitle}".`,
-    });
-  };
-
-  // Media Gallery
-  const uploadMediaItem = (item: Omit<MediaItem, 'id' | 'uploadedAt' | 'isApproved'>) => {
-    const newItem: MediaItem = {
-      ...item,
-      id: `med-${Date.now()}`,
-      uploadedAt: new Date().toISOString().split('T')[0],
-      isApproved: currentRole === 'ADMIN', // auto-approve if admin
-    };
-    setMedia((prev) => [newItem, ...prev]);
-    addToast({
-      type: 'success',
-      title: 'Media Uploaded',
-      description: currentRole === 'ADMIN' ? 'Published to gallery.' : 'Submitted for Admin moderation.',
-    });
-  };
-
-  const toggleApproveMedia = (mediaId: string) => {
-    setMedia((prev) =>
-      prev.map((m) => (m.id === mediaId ? { ...m, isApproved: !m.isApproved } : m))
-    );
-    addToast({
-      type: 'info',
-      title: 'Media Status Updated',
-      description: 'Visibility updated in gallery.',
-    });
-  };
-
-  const resetAllData = () => {
-    localStorage.clear();
-    setCurrentUser(INITIAL_USERS[0]);
-    setActiveStudents(INITIAL_ACTIVE_STUDENTS);
-    setArchivedStudents(INITIAL_ARCHIVED_STUDENTS);
+    Object.values(KEYS).forEach((key) => removeStorage(key));
+    setStudents(INITIAL_ACTIVE_STUDENTS);
     setCoaches(INITIAL_COACHES);
+    setEnrollmentsState(INITIAL_ENROLLMENTS);
+    setCoachAssignments(INITIAL_COACH_ASSIGNMENTS);
+    setAttendance(buildInitialAttendance());
+    setAnnouncements(INITIAL_ANNOUNCEMENTS);
     setBookings(INITIAL_BOOKINGS);
-    setStudentAttendance(INITIAL_STUDENT_ATTENDANCE);
     setCoachAttendance(INITIAL_COACH_ATTENDANCE);
     setInvoices(INITIAL_INVOICES);
     setPayroll(INITIAL_PAYROLL);
     setBroadcasts(INITIAL_BROADCASTS);
     setIncidents(INITIAL_INCIDENTS);
     setMedia(INITIAL_MEDIA);
-    setActiveChildIdState('stu-active-001');
+    setArchivedStudents(INITIAL_ARCHIVED_STUDENTS);
+    setSession(null);
+    setCurrentUser(null);
     addToast({
-      type: 'info',
-      title: 'Vendhan Sports Academy Reset',
-      description: 'Default state restored: Admin (admin/admin123), Coach (coach/coach123), and Student (001/vendhan).',
+      type: result.ok ? 'info' : 'warning',
+      title: result.ok ? 'Academy data reset' : 'Local data reset',
+      description: result.ok
+        ? 'Everything is back to the seeded demo state.'
+        : 'The server copy could not be reached, so only this device was reset.',
     });
+  }, [currentRole, addToast]);
+
+  const value: AppContextType = {
+    session,
+    currentUser,
+    currentRole,
+    isAuthenticated,
+    isReady,
+    signIn,
+    signOut,
+
+    students: visibleStudents,
+    coaches,
+    enrollments,
+    coachAssignments,
+    announcements,
+    facilities,
+    bookings,
+    coachAttendance,
+    invoices,
+    payroll,
+    broadcasts,
+    incidents,
+    media,
+    archivedStudents: currentRole === 'ADMIN' ? archivedStudents : [],
+
+    myStudent,
+    myCoach,
+    mySports,
+    studentsForSport,
+    sportNamesForStudent,
+
+    attendance,
+    attendanceForDate,
+    markAttendance,
+    markAllPresent,
+    studentAttendanceSummary,
+    isSyncing,
+    refreshFromServer,
+
+    addActiveStudent,
+    updateActiveStudent,
+    updateCoachProfile,
+    archiveStudent,
+    restoreArchivedStudent,
+    setEnrollments,
+    validateBulkIngestionData,
+    executeBulkIngest,
+
+    markBatchStudentAttendance,
+    recordCoachCheckIn,
+    recordCoachCheckOut,
+    updateStudentSkills,
+    awardStudentAchievement,
+    createIncidentReport,
+
+    createBooking,
+    cancelBooking,
+    payInvoice,
+    sendWhatsAppPaymentReminder,
+    generateNewInvoice,
+    markPayrollDisbursed,
+    sendEmergencyBroadcast,
+    uploadMediaItem,
+    toggleApproveMedia,
+
+    toasts,
+    addToast,
+    removeToast,
+    resetAllData,
   };
 
-  return (
-    <AppContext.Provider
-      value={{
-        currentUser,
-        currentRole,
-        activeChildId,
-        activeChild,
-        allUsers: INITIAL_USERS,
-        loginAsUser,
-        switchRole,
-        setActiveChildId,
-        activeStudents,
-        archivedStudents: currentRole === 'ADMIN' ? archivedStudents : [], // RBAC ENFORCED: Zero visibility for Coach & Parent
-        coaches,
-        facilities,
-        bookings,
-        studentAttendance,
-        coachAttendance,
-        invoices,
-        payroll,
-        broadcasts,
-        incidents,
-        media,
-        addActiveStudent,
-        updateActiveStudent,
-        archiveStudent,
-        restoreArchivedStudent,
-        validateBulkIngestionData,
-        executeBulkIngest,
-        markBatchStudentAttendance,
-        recordCoachCheckIn,
-        recordCoachCheckOut,
-        updateStudentSkills,
-        awardStudentAchievement,
-        createIncidentReport,
-        createBooking,
-        cancelBooking,
-        payInvoice,
-        sendWhatsAppPaymentReminder,
-        generateNewInvoice,
-        markPayrollDisbursed,
-        sendEmergencyBroadcast,
-        uploadMediaItem,
-        toggleApproveMedia,
-        toasts,
-        addToast,
-        removeToast,
-        resetAllData,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
 export const useApp = () => {
   const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useApp must be used within an AppProvider');
-  }
+  if (!context) throw new Error('useApp must be used within an AppProvider');
   return context;
 };
+
+export { roleHome };
