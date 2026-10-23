@@ -117,8 +117,8 @@ export function verifyPassword(password: string, stored: string | undefined): bo
 function createBootstrapAdmin(): User {
   const username = process.env.BOOTSTRAP_ADMIN_USERNAME?.trim();
   const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
-  if (!username || !password || password.length < 16) {
-    throw new Error('Set BOOTSTRAP_ADMIN_USERNAME and a BOOTSTRAP_ADMIN_PASSWORD of at least 16 characters.');
+  if (!username || !password || password.length < 8) {
+    throw new Error('Set BOOTSTRAP_ADMIN_USERNAME and a BOOTSTRAP_ADMIN_PASSWORD of at least 8 characters.');
   }
   return {
     id: 'user-admin-bootstrap',
