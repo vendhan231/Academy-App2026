@@ -10,6 +10,8 @@ const EVENT_ICON: Record<AcademyEventType, React.FC<{ className?: string }>> = {
   'Trial Camp': Microscope,
   'Time Trials': CalendarClock,
   'Sports Day': PartyPopper,
+  Celebration: PartyPopper,
+  Training: CalendarClock,
 };
 
 const EVENT_TONE: Record<AcademyEventType, AccentTone> = {
@@ -17,6 +19,8 @@ const EVENT_TONE: Record<AcademyEventType, AccentTone> = {
   'Trial Camp': 'emerald',
   'Time Trials': 'sky',
   'Sports Day': 'amber',
+  Celebration: 'amber',
+  Training: 'sky',
 };
 
 function formatEventDate(iso: string) {

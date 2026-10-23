@@ -7,9 +7,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "worker:notifications": "tsx src/server/notificationWorker.ts",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf .next dist"
+    "clean": "rm -rf .next dist",
+    "student:import": "node --import tsx src/server/studentImport.ts temp/student.json"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -23,6 +25,7 @@
     "next": "^16.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "sharp": "^0.35.5",
     "vite": "^8.3.0"
   },
   "devDependencies": {

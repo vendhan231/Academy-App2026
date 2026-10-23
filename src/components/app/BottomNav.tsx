@@ -2,51 +2,71 @@
 
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, CalendarCheck, Calendar, User, Users, ClipboardCheck, History, ShieldAlert, LayoutDashboard, BarChart3, MoreHorizontal, Images } from 'lucide-react';
+import {
+  Home,
+  CalendarCheck,
+  User,
+  Users,
+  ClipboardCheck,
+  LayoutDashboard,
+  BarChart3,
+  UserRoundCheck,
+} from 'lucide-react';
 import { UserRole } from '@/types';
+import { IconComponent } from '@/lib/icons';
 
 export interface NavItem {
   href: string;
   label: string;
-  Icon: React.FC<{ className?: string }>;
+  Icon: IconComponent;
 }
 
+/**
+ * Bottom navigation per role. Every entry is a real route and every tab is
+ * three to five items so the bar stays comfortable on a phone.
+ */
 export const NAV_ITEMS: Record<UserRole, NavItem[]> = {
   STUDENT: [
     { href: '/student', label: 'Home', Icon: Home },
     { href: '/student/attendance', label: 'Attendance', Icon: CalendarCheck },
-    { href: '/student/court', label: 'Book', Icon: Calendar },
-    { href: '/student/gallery', label: 'Gallery', Icon: Images },
     { href: '/student/profile', label: 'Profile', Icon: User },
   ],
   COACH: [
     { href: '/coach', label: 'Home', Icon: Home },
     { href: '/coach/attendance', label: 'Mark', Icon: ClipboardCheck },
-    { href: '/coach/history', label: 'History', Icon: History },
-    { href: '/coach/incidents', label: 'Safety', Icon: ShieldAlert },
+    { href: '/coach/students', label: 'Students', Icon: Users },
     { href: '/coach/profile', label: 'Profile', Icon: User },
   ],
   ADMIN: [
     { href: '/admin', label: 'Dashboard', Icon: LayoutDashboard },
     { href: '/admin/students', label: 'Students', Icon: Users },
     { href: '/admin/attendance', label: 'Attendance', Icon: CalendarCheck },
+    { href: '/admin/staff', label: 'Coaches', Icon: UserRoundCheck },
     { href: '/admin/reports', label: 'Reports', Icon: BarChart3 },
-    { href: '/admin/more', label: 'More', Icon: MoreHorizontal },
   ],
+};
+
+const ROLE_ROOT: Record<UserRole, string> = {
+  STUDENT: '/student',
+  COACH: '/coach',
+  ADMIN: '/admin',
 };
 
 /**
  * Persistent bottom navigation. Every role only ever sees its own features,
- * and every target is at least 44px tall for comfortable thumb use.
+ * and every target is at least 56px tall for comfortable thumb use.
  */
 export const BottomNav: React.FC<{ role: UserRole }> = ({ role }) => {
   const pathname = usePathname();
   const router = useRouter();
   const items = NAV_ITEMS[role];
-  const root = `/${role === 'STUDENT' ? 'student' : role === 'COACH' ? 'coach' : 'admin'}`;
+  const root = ROLE_ROOT[role];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg">
+    <nav
+      aria-label={`${role.toLowerCase()} navigation`}
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg dark:border-line dark:bg-surface/95"
+    >
       <div className="mx-auto flex max-w-lg">
         {items.map((item) => {
           const active =
@@ -58,16 +78,27 @@ export const BottomNav: React.FC<{ role: UserRole }> = ({ role }) => {
               key={item.href}
               onClick={() => router.push(item.href)}
               aria-current={active ? 'page' : undefined}
-              className="flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 transition-colors"
+              aria-label={item.label}
+              title={item.label}
+              className="relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 py-2 transition-colors"
             >
-              <item.Icon
-                className={`h-5 w-5 transition-colors ${
-                  active ? 'text-slate-900' : 'text-slate-400'
+              <span
+                aria-hidden="true"
+                className={`absolute inset-x-4 top-0 h-0.5 rounded-full transition-all duration-200 ${
+                  active
+                    ? 'bg-slate-900 opacity-100 dark:bg-slate-100'
+                    : 'opacity-0'
                 }`}
               />
+              <item.Icon
+                className={`h-[22px] w-[22px] transition-colors duration-200 ${
+                  active ? 'text-slate-900 dark:text-slate-50' : 'text-slate-400'
+                }`}
+                strokeWidth={active ? 2.3 : 1.9}
+              />
               <span
-                className={`text-[10px] font-bold leading-none transition-colors ${
-                  active ? 'text-slate-900' : 'text-slate-400'
+                className={`text-[10px] font-bold leading-none transition-colors duration-200 ${
+                  active ? 'text-slate-900 dark:text-slate-50' : 'text-slate-400'
                 }`}
               >
                 {item.label}

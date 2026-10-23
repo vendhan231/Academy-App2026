@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { AppProvider } from '@/context/AppContext';
 import { Toaster } from '@/components/layout/Toaster';
+import { themeScript } from '@/components/app/ThemeToggle';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -9,20 +10,23 @@ export const metadata: Metadata = {
     template: '%s | Vendhan Sports Academy',
   },
   description:
-    'Vendhan Sports Academy trains the next generation of champions across Badminton, Cricket, Football and Swimming. Explore ongoing classes, our wall of fame, the weekly schedule and upcoming events.',
+    'Vendhan Sports Academy trains the next generation of champions across Badminton, Roller Skating, Chess, Silambam, Archery, Physical Fitness, Yoga and Football. Explore ongoing classes, our wall of fame, the weekly schedule and upcoming events.',
   keywords: [
     'Vendhan Sports Academy',
     'sports academy',
     'badminton training',
-    'cricket coaching',
+    'roller skating academy',
+    'chess coaching',
+    'silambam classes',
+    'archery training',
+    'fitness coaching',
+    'yoga classes',
     'football academy',
-    'swimming coaching',
-    'sports school',
   ],
   openGraph: {
     title: 'Vendhan Sports Academy',
     description:
-      'A multi-sport academy for budding champions. Badminton, Cricket, Football and Swimming with certified coaching.',
+      'A multi-sport academy for budding champions. Eight sports, certified coaching, honest progress tracking and a safety-first culture.',
     type: 'website',
   },
   twitter: {
@@ -40,16 +44,17 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="bg-slate-50 text-slate-900 antialiased">
+      <body className="bg-surface-2 text-body antialiased">
         <AppProvider>
           {children}
           <Toaster />

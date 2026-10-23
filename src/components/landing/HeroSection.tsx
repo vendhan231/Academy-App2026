@@ -42,11 +42,12 @@ export const HeroSection: React.FC = () => {
           </h1>
 
           <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
-            Where discipline meets desire. We coach budding champions across{' '}
-            <span className="font-semibold text-white">Badminton</span>,{' '}
-            <span className="font-semibold text-white">Cricket</span>,{' '}
-            <span className="font-semibold text-white">Football</span> and{' '}
-            <span className="font-semibold text-white">Swimming</span> — with certified
+            Where discipline meets desire. We coach budding champions across eight sports —
+            from <span className="font-semibold text-white">Badminton</span> and{' '}
+            <span className="font-semibold text-white">Football</span> to{' '}
+            <span className="font-semibold text-white">Chess</span>,{' '}
+            <span className="font-semibold text-white">Silambam</span> and{' '}
+            <span className="font-semibold text-white">Archery</span> — with certified
             coaches, honest progress tracking and a safety-first culture.
           </p>
 
@@ -173,9 +174,9 @@ export const HeroSection: React.FC = () => {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100">
               <Users className="h-4 w-4 text-emerald-600" />
             </span>
-            <span className="text-xs leading-tight">
+            <span className="flex flex-col">
               <span className="block font-extrabold text-slate-900">12 certified coaches</span>
-              <span className="text-slate-500">Across four disciplines</span>
+              <span className="text-slate-500">Across eight sports</span>
             </span>
           </div>
         </div>

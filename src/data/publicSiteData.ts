@@ -439,7 +439,7 @@ export const WEEK_SCHEDULE: ScheduleSlot[] = [
   },
 ];
 
-export type AcademyEventType = 'Tournament' | 'Trial Camp' | 'Time Trials' | 'Sports Day';
+export type AcademyEventType = 'Tournament' | 'Trial Camp' | 'Time Trials' | 'Sports Day' | 'Celebration' | 'Training';
 export type AccentTone = 'emerald' | 'amber' | 'sky' | 'violet';
 
 export interface AcademyEvent {

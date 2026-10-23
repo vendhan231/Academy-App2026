@@ -53,7 +53,9 @@ function visibleState(session: SessionPayload): AcademyStore {
     enrollments: store.enrollments.filter((item) => studentIds.has(item.studentId)),
     coachAssignments: store.coachAssignments.filter((item) => sportIds.has(item.sportId)),
     attendance: store.attendance.filter((item) => studentIds.has(item.studentId)),
-    announcements: store.announcements.filter((item) => item.audience === 'ALL' || item.audience === session.role),
+    announcements: session.role === 'COACH'
+      ? store.announcements
+      : store.announcements.filter((item) => item.audience === 'ALL' || item.audience === session.role),
     archivedStudents: [],
     facilities: store.facilities,
     bookings: store.bookings.filter((item) =>
@@ -73,9 +75,7 @@ function visibleState(session: SessionPayload): AcademyStore {
     incidents: session.role === 'COACH'
       ? store.incidents.filter((item) => sportIds.has(item.sport))
       : [],
-    media: store.media.filter((item) =>
-      item.isApproved || item.uploadedBy === session.name
-    ),
+    media: session.role === 'COACH' ? store.media : store.media.filter((item) => item.isApproved),
   };
 }
 
@@ -100,7 +100,7 @@ function mergeCoachState(incoming: Record<string, unknown>, expected: AcademySto
   const coach = store.coaches.find((item) => item.userId === session.userId);
   if (!coach) throw new ApiError(403, 'No coach profile is linked to this account.');
   rejectChangedReadOnlyCollections(incoming, expected, [
-    'coaches', 'students', 'coachAttendance', 'incidents', 'bookings', 'media',
+    'coaches', 'students', 'coachAttendance', 'incidents', 'bookings',
   ]);
 
   const incomingCoaches = incoming.coaches as Coach[];
@@ -136,11 +136,13 @@ function mergeCoachState(incoming: Record<string, unknown>, expected: AcademySto
     if (!previous) throw new ApiError(403, 'You cannot modify a student outside your assigned sports.');
     const enrolled = store.enrollments.some((item) => item.studentId === next.id && item.active && sportIds.has(item.sportId));
     if (!enrolled) throw new ApiError(403, 'You cannot modify a student outside your assigned sports.');
+    if (!sameValue(next.achievements, previous.achievements)) {
+      throw new ApiError(403, 'Manage achievements through the achievements API.');
+    }
     const normalizedNext = { ...next, skillRatings: previous.skillRatings, achievements: previous.achievements };
-    if (!sameValue(normalizedNext, previous)) throw new ApiError(403, 'Only skill ratings and achievements can be updated.');
+    if (!sameValue(normalizedNext, previous)) throw new ApiError(403, 'Only skill ratings can be updated through shared state. Use the achievement API for achievement changes.');
     const stored = store.students.find((item) => item.id === next.id)!;
     stored.skillRatings = next.skillRatings;
-    stored.achievements = next.achievements;
   }
 
   const existingCoachAttendance = expected.coachAttendance;
@@ -199,7 +201,6 @@ function mergeCoachState(incoming: Record<string, unknown>, expected: AcademySto
   }
 
   mergeOwnBookings(incoming.bookings as AcademyStore['bookings'], expected.bookings, session);
-  mergeOwnMedia(incoming.media as AcademyStore['media'], expected.media, session);
 }
 
 function mergeOwnBookings(
@@ -289,36 +290,6 @@ function validateAdminBookings(bookings: AcademyStore['bookings']) {
   }
 }
 
-function mergeOwnMedia(
-  incoming: AcademyStore['media'],
-  expected: AcademyStore['media'],
-  session: SessionPayload
-) {
-  const store = getStore();
-  const expectedIds = new Set(expected.map((item) => item.id));
-  const incomingById = new Map(incoming.map((item) => [item.id, item]));
-  for (const current of expected) {
-    if (!sameValue(current, incomingById.get(current.id))) {
-      throw new ApiError(403, 'Existing media items can only be changed by an administrator.');
-    }
-  }
-  for (const item of incoming) {
-    if (expectedIds.has(item.id)) continue;
-    if (
-      item.uploadedBy !== session.name ||
-      item.isApproved ||
-      !item.mediaUrl.startsWith('https://') ||
-      !item.thumbnailUrl.startsWith('https://')
-    ) {
-      throw new ApiError(400, 'New media must use secure URLs and await admin approval.');
-    }
-    store.media.push(item);
-  }
-  if (incoming.filter((item) => expectedIds.has(item.id)).length !== expectedIds.size) {
-    throw new ApiError(403, 'Existing media items cannot be deleted.');
-  }
-}
-
 export async function GET(req: NextRequest) {
   return withApiErrorHandling(async () => {
     const session = await requireRole(req, ['ADMIN', 'COACH', 'STUDENT']);
@@ -341,7 +312,24 @@ export async function PUT(req: NextRequest) {
 
     if (session.role === 'ADMIN') {
       validateAdminBookings(incoming.bookings as AcademyStore['bookings']);
-      for (const key of COLLECTIONS) getStore()[key] = incoming[key] as never;
+      const store = getStore();
+      if (!sameValue(incoming.announcements, store.announcements)) {
+        throw new ApiError(403, 'Manage announcements through the announcements API.');
+      }
+      if (!sameValue(incoming.media, store.media)) {
+        throw new ApiError(403, 'Manage media through the secure media API.');
+      }
+      const currentStudents = new Map(store.students.map((student) => [student.id, student]));
+      for (const next of incoming.students as AcademyStore['students']) {
+        const existing = currentStudents.get(next.id);
+        if (existing && !sameValue(next.achievements, existing.achievements)) {
+          throw new ApiError(403, 'Manage achievements through the achievements API.');
+        }
+      }
+      for (const key of COLLECTIONS) {
+        if (key === 'announcements' || key === 'media') continue;
+        store[key] = incoming[key] as never;
+      }
     } else {
       const expected = visibleState(session);
       const backup = structuredClone(getStore());
@@ -349,9 +337,8 @@ export async function PUT(req: NextRequest) {
         if (session.role === 'COACH') {
           mergeCoachState(incoming, expected, session);
         } else {
-          rejectChangedReadOnlyCollections(incoming, expected, ['bookings', 'media']);
+          rejectChangedReadOnlyCollections(incoming, expected, ['bookings']);
           mergeOwnBookings(incoming.bookings as AcademyStore['bookings'], expected.bookings, session);
-          mergeOwnMedia(incoming.media as AcademyStore['media'], expected.media, session);
         }
       } catch (error) {
         Object.assign(getStore(), backup);

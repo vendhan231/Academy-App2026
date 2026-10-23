@@ -36,6 +36,7 @@ import {
   INITIAL_MEDIA,
   INITIAL_USERS,
 } from '@/data/initialData';
+import { IMPORTED_ACTIVE_STUDENTS, IMPORTED_ENROLLMENTS } from '@/data/importedStudentSeed';
 import { buildInitialAttendance } from '@/data/attendanceSeed';
 import { connectToMongo, getDb, mongoState } from '@/lib/mongo';
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
@@ -83,6 +84,26 @@ export function hashPassword(password: string): string {
   return `scrypt$${salt}$${hash}`;
 }
 
+/**
+ * Demo mode.
+ *
+ * Outside of production the app always runs on the seeded academy data, so it
+ * works with zero configuration. A production deployment is expected to use
+ * MongoDB and a bootstrap administrator, but that makes a fresh deployment
+ * unusable until the database is reachable, which is why it can be switched
+ * off explicitly with `DEMO_MODE=true`.
+ *
+ * Demo mode ships known credentials (admin / admin123, coach / coach123 and
+ * the student codes), so it must never be enabled on a public deployment that
+ * holds real data.
+ */
+export function isDemoMode(): boolean {
+  const flag = process.env.DEMO_MODE?.trim().toLowerCase();
+  if (flag === 'true') return true;
+  if (flag === 'false') return false;
+  return process.env.NODE_ENV !== 'production';
+}
+
 export function verifyPassword(password: string, stored: string | undefined): boolean {
   if (!stored) return false;
   if (!stored.startsWith('scrypt$')) return stored === password;
@@ -113,14 +134,15 @@ function createBootstrapAdmin(): User {
 
 function getUsers(): User[] {
   if (!globalForUsers.__vendhanUsers) {
-    if (process.env.NODE_ENV === 'production') {
-      globalForUsers.__vendhanUsers = [createBootstrapAdmin()];
+    if (isDemoMode()) {
+      globalForUsers.__vendhanUsers = INITIAL_USERS.map((user) => ({
+        ...user,
+        password: user.password ? hashPassword(user.password) : undefined,
+      }));
       return globalForUsers.__vendhanUsers;
     }
-    globalForUsers.__vendhanUsers = INITIAL_USERS.map((user) => ({
-      ...user,
-      password: user.password ? hashPassword(user.password) : undefined,
-    }));
+    globalForUsers.__vendhanUsers = [createBootstrapAdmin()];
+    return globalForUsers.__vendhanUsers;
   }
   return globalForUsers.__vendhanUsers;
 }
@@ -133,10 +155,26 @@ export function resetUsers(): void {
 }
 
 function createStore(): AcademyStore {
+  const importedStudents = IMPORTED_ACTIVE_STUDENTS.map((student) => ({
+    ...student,
+    chronicAilments: [...student.chronicAilments],
+    allergies: [...student.allergies],
+    achievements: [...student.achievements],
+    skillRatings: {
+      ...student.skillRatings,
+      badges: [...student.skillRatings.badges],
+    },
+    emergencyDoctorContact: {
+      ...student.emergencyDoctorContact,
+    },
+  }));
+  const combinedStudents: ActiveStudent[] = [...INITIAL_ACTIVE_STUDENTS, ...importedStudents];
+  const combinedEnrollments = [...INITIAL_ENROLLMENTS, ...IMPORTED_ENROLLMENTS].map((enrollment) => ({ ...enrollment }));
+
   return {
-    students: INITIAL_ACTIVE_STUDENTS.map((student) => ({ ...student })),
+    students: combinedStudents,
     coaches: INITIAL_COACHES.map((coach) => ({ ...coach })),
-    enrollments: INITIAL_ENROLLMENTS.map((enrollment) => ({ ...enrollment })),
+    enrollments: combinedEnrollments,
     coachAssignments: INITIAL_COACH_ASSIGNMENTS.map((assignment) => ({ ...assignment })),
     attendance: buildInitialAttendance(),
     announcements: INITIAL_ANNOUNCEMENTS.map((announcement) => ({ ...announcement })),
@@ -174,8 +212,11 @@ export async function ensureStoreReady(): Promise<void> {
   await connectToMongo();
 
   if (!mongoState.configured) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('MONGODB_URI must be configured in production; in-memory demo data is development-only.');
+    if (!isDemoMode()) {
+      throw new Error(
+        'MONGODB_URI must be configured in production; in-memory demo data is development-only. ' +
+          'Set DEMO_MODE=true to run the seeded demo academy without a database.'
+      );
     }
     return;
   }

@@ -59,7 +59,7 @@ export const LandingPage: React.FC = () => {
                   </span>
                 </div>
                 <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-400">
-                  Nine seasons of coaching young athletes across four disciplines. Walk in for
+                  Nine seasons of coaching young athletes across eight sports. Walk in for
                   a trial, stay for the trophies.
                 </p>
               </div>

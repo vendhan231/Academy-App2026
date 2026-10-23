@@ -58,6 +58,11 @@ export interface Achievement {
   awardedDate: string;
   coachName: string;
   medalType?: 'Gold' | 'Silver' | 'Bronze' | 'Badge' | 'Trophy';
+  photoUrl?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SkillRating {
@@ -268,6 +273,10 @@ export interface MediaItem {
   uploadedAt: string;
   taggedStudentNames: string[];
   isApproved: boolean;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Announcement {
@@ -279,6 +288,9 @@ export interface Announcement {
   createdAt: string;
   authorName: string;
   pinned?: boolean;
+  createdBy?: string;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 
 export interface BulkIngestRow {

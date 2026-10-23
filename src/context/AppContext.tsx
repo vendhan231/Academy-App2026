@@ -44,6 +44,7 @@ import {
   INITIAL_MEDIA,
   INITIAL_PAYROLL,
 } from '../data/initialData';
+import { IMPORTED_ACTIVE_STUDENTS } from '../data/importedStudentSeed';
 import { buildSeedAttendance, toISODate } from '../data/attendanceSeed';
 
 export interface ToastMessage {
@@ -268,7 +269,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   /* ---------------- collections ---------------- */
   const [students, setStudents] = useState<ActiveStudent[]>(
-    () => parseJSON<ActiveStudent[]>(readStorage(KEYS.students)) ?? INITIAL_ACTIVE_STUDENTS
+    () => {
+      const saved = parseJSON<ActiveStudent[]>(readStorage(KEYS.students));
+      if (saved) return saved;
+      return [...INITIAL_ACTIVE_STUDENTS, ...IMPORTED_ACTIVE_STUDENTS.map((student) => ({
+        ...student,
+        chronicAilments: [...student.chronicAilments],
+        allergies: [...student.allergies],
+        achievements: [...student.achievements],
+        skillRatings: {
+          ...student.skillRatings,
+          badges: [...student.skillRatings.badges],
+        },
+        emergencyDoctorContact: {
+          ...student.emergencyDoctorContact,
+        },
+      }))];
+    }
   );
   const [coaches, setCoaches] = useState<Coach[]>(
     () => parseJSON<Coach[]>(readStorage(KEYS.coaches)) ?? INITIAL_COACHES
@@ -338,6 +355,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
    * freshest numbers.
    */
   const refreshFromServer = useCallback(async (showIndicator = false) => {
+    if (!session) {
+      isSharedStateReady.current = true;
+      if (showIndicator) setIsSyncing(false);
+      return;
+    }
+
     if (showIndicator) setIsSyncing(true);
     try {
       const result = await apiGet<{ state: {
@@ -376,15 +399,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIncidents(state.incidents);
         setMedia(state.media);
         isSharedStateReady.current = true;
-      } else if (result.status !== 401) {
-        console.error('Could not refresh shared academy data:', result.message);
+        return;
       }
+
+      if (result.status === 401) {
+        removeStorage(KEYS.session);
+        removeStorage(KEYS.token);
+        setSession(null);
+        setCurrentUser(null);
+        isSharedStateReady.current = true;
+        return;
+      }
+
+      // Keep the app usable with cached local state when the API is temporarily
+      // unavailable or the deployment is still initializing.
+      isSharedStateReady.current = true;
     } catch (error) {
-      console.error('Could not refresh shared academy data:', error);
+      // Ignore transient deploy-time or network issues so the app keeps using the
+      // local fallback state until the server is reachable again.
+      isSharedStateReady.current = true;
     } finally {
       if (showIndicator) setIsSyncing(false);
     }
-  }, []);
+  }, [session]);
 
   /* ---------------- session bootstrap ---------------- */
   useEffect(() => {
@@ -426,6 +463,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSession(data.session);
         setCurrentUser(data.user);
         writeStorage(KEYS.session, data.session);
+        setIsReady(true);
       } catch {
         if (!cancelled) {
           setSession(null);
@@ -479,6 +517,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       writeStorage(KEYS.session, nextSession);
       setSession(nextSession);
       setCurrentUser(payload.user);
+      setIsReady(true);
     },
     []
   );

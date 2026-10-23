@@ -40,11 +40,12 @@ export async function apiRequest<T>(
   init: RequestInit = {}
 ): Promise<ApiResult<T>> {
   try {
+    const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
     const res = await fetch(path, {
       ...init,
       cache: 'no-store',
       headers: {
-        'Content-Type': 'application/json',
+        ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
         ...authHeaders(),
         ...(init.headers ?? {}),
       },
