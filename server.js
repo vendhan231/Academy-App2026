@@ -74,12 +74,14 @@ export async function seedInitialData() {
   try {
     console.log('[Seed] Verifying system credentials, 6 sports disciplines, and dual fee accounts...');
 
-    // 1. Ensure Admin exists: "admin" / "vendhan@123"
-    let adminUser = await User.findOne({ username: 'admin' });
+    const adminUsername = (process.env.ADMIN_USERNAME || 'admin').trim().toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD || 'vendhan@123';
+    // 1. Ensure Admin exists
+    let adminUser = await User.findOne({ username: adminUsername });
     if (!adminUser) {
       adminUser = await User.create({
-        username: 'admin',
-        password: 'vendhan@123',
+        username: adminUsername,
+        password: adminPassword,
         name: 'Super Administrator',
         role: 'admin',
         phone: '+91 98765 43210',
@@ -94,12 +96,14 @@ export async function seedInitialData() {
       await adminUser.save();
     }
 
-    // 2. Ensure Head Coach exists: "vendhan" / "vendhan@123"
-    let headCoachUser = await User.findOne({ username: 'vendhan' });
+    const headCoachUsername = (process.env.HEAD_COACH_USERNAME || 'vendhan').trim().toLowerCase();
+    const headCoachPassword = process.env.HEAD_COACH_PASSWORD || 'vendhan@123';
+    // 2. Ensure Head Coach exists
+    let headCoachUser = await User.findOne({ username: headCoachUsername });
     if (!headCoachUser) {
       headCoachUser = await User.create({
-        username: 'vendhan',
-        password: 'vendhan@123',
+        username: headCoachUsername,
+        password: headCoachPassword,
         name: 'Master Vendhan (Head Coach & Founder)',
         role: 'head_coach',
         phone: '+91 98765 43211',
