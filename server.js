@@ -472,10 +472,10 @@ app.post('/api/users', authenticate, authorize(['admin']), async (req, res) => {
   try {
     const { username, password, role, name, sport, phone, fees, kitFees, coachSalary } = req.body;
 
-    if (!username || !password || !role || !name) {
+    if (!username || !role || !name) {
       return res.status(400).json({
         success: false,
-        message: 'Username, password, role, and name are required fields.'
+        message: 'Username, role, and name are required fields.'
       });
     }
 
@@ -502,7 +502,7 @@ app.post('/api/users', authenticate, authorize(['admin']), async (req, res) => {
 
     const newUser = await User.create({
       username: username.trim().toLowerCase(),
-      password,
+      password: password || 'vendhan@123',
       role,
       name: name.trim(),
       sport: sport || 'Physical Fitness',
@@ -629,6 +629,68 @@ app.post('/api/students', authenticate, authorize(['admin', 'head_coach']), asyn
   }
 });
 
+// 4.2b GET /api/students/:id/profile: Accessible by Admin, Head Coach, Coach, and the authenticated student (self only)
+app.get('/api/students/:id/profile', authenticate, async (req, res) => {
+  try {
+    const allowedRoles = ['admin', 'head_coach', 'coach', 'student'];
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+
+    let student = await User.findById(req.params.id);
+    if (!student) student = await User.findOne({ username: req.params.id });
+    if (!student || student.role !== 'student') {
+      return res.status(404).json({ success: false, message: 'Student record not found.' });
+    }
+
+    if (req.user.role === 'student' && String(req.user.id || req.user._id) !== String(student._id || student.id)) {
+      return res.status(403).json({ success: false, message: 'Access denied to other student profiles.' });
+    }
+
+    return res.json({ success: true, data: student.toJSON ? student.toJSON() : student });
+  } catch (err) {
+    console.error('Error fetching student profile:', err);
+    return res.status(500).json({ success: false, message: 'Error retrieving student profile.' });
+  }
+});
+
+// 4.2c PUT /api/students/:id: [Admin, Head Coach only] Update personal bio, contact details, join date, and fee structures
+app.put('/api/students/:id', authenticate, authorize(['admin', 'head_coach']), async (req, res) => {
+  try {
+    let student = await User.findById(req.params.id);
+    if (!student) student = await User.findOne({ username: req.params.id });
+    if (!student || student.role !== 'student') {
+      return res.status(404).json({ success: false, message: 'Student record not found.' });
+    }
+
+    const {
+      name, sport, phone, parentName, address, dateOfBirth, gender,
+      sportLevel, enrollmentDate, bio, profilePhoto, fees, kitFees
+    } = req.body;
+
+    const update = {};
+    if (name !== undefined) update.name = name;
+    if (sport !== undefined) update.sport = sport;
+    if (phone !== undefined) update.phone = phone;
+    if (parentName !== undefined) update.parentName = parentName;
+    if (address !== undefined) update.address = address;
+    if (dateOfBirth !== undefined) update.dateOfBirth = dateOfBirth;
+    if (gender !== undefined) update.gender = gender;
+    if (sportLevel !== undefined) update.sportLevel = sportLevel;
+    if (enrollmentDate !== undefined) update.enrollmentDate = enrollmentDate;
+    if (bio !== undefined) update.bio = bio;
+    if (profilePhoto !== undefined) update.profilePhoto = profilePhoto;
+    if (fees !== undefined) update.fees = fees;
+    if (kitFees !== undefined) update.kitFees = kitFees;
+
+    const updated = await User.findByIdAndUpdate(student._id, update, { new: true });
+    return res.json({ success: true, message: 'Student profile updated.', data: updated.toJSON ? updated.toJSON() : updated });
+  } catch (err) {
+    console.error('Error updating student:', err);
+    return res.status(500).json({ success: false, message: 'Error updating student profile.' });
+  }
+});
+
 // 4.2 GET /api/students: [Admin, Head Coach, Coach] Fetch active regular students (filterable by ?sport=)
 app.get('/api/students', authenticate, authorize(['admin', 'head_coach', 'coach']), async (req, res) => {
   try {
@@ -722,7 +784,7 @@ app.post('/api/archive-students', authenticate, authorize(['admin']), async (req
 app.put('/api/students/:id/fees', authenticate, authorize(['admin', 'head_coach', 'coach']), async (req, res) => {
   try {
     const { id } = req.params;
-    const { total, paid, kitTotal, kitPaid, fees, kitFees } = req.body;
+    const { total, paid, kitTotal, kitPaid, fees, kitFees, paymentMethod, tuitionPaymentMethod, kitPaymentMethod } = req.body;
 
     let student = await User.findById(id);
     if (!student) {
@@ -741,22 +803,27 @@ app.put('/api/students/:id/fees', authenticate, authorize(['admin', 'head_coach'
     const uniformPaid = Number(kitPaid !== undefined ? kitPaid : kitFees?.paid !== undefined ? kitFees.paid : student.kitFees?.paid || 0);
     const uniformDue = Math.max(0, uniformTotal - uniformPaid);
 
-    const updatedStudent = await User.findByIdAndUpdate(
-      student._id,
-      {
-        fees: {
-          total: tuitionTotal,
-          paid: tuitionPaid,
-          due: tuitionDue
-        },
-        kitFees: {
-          total: uniformTotal,
-          paid: uniformPaid,
-          due: uniformDue
-        }
-      },
-      { new: true }
-    );
+     const tuitionPayment = tuitionPaymentMethod || paymentMethod || fees?.paymentMethod || student.fees?.paymentMethod || '';
+     const kitPayment = kitPaymentMethod || paymentMethod || kitFees?.paymentMethod || student.kitFees?.paymentMethod || '';
+
+     const updatedStudent = await User.findByIdAndUpdate(
+       student._id,
+       {
+         fees: {
+           total: tuitionTotal,
+           paid: tuitionPaid,
+           due: tuitionDue,
+           paymentMethod: tuitionPayment
+         },
+         kitFees: {
+           total: uniformTotal,
+           paid: uniformPaid,
+           due: uniformDue,
+           paymentMethod: kitPayment
+         }
+       },
+       { new: true }
+     );
 
     return res.json({
       success: true,
@@ -1018,9 +1085,7 @@ async function startServer() {
     console.log(`\n======================================================`);
     console.log(`  🏆 Vendhan Sports Academy Platform is LIVE (6 Sports)`);
     console.log(`  🚀 Server listening on http://0.0.0.0:${PORT}`);
-    console.log(`  Default Admin 1: username "admin", password "vendhan@123"`);
-    console.log(`  Default Admin 2: username "vendhan", password "vendhan@123"`);
-    console.log(`======================================================\n`);
+        console.log(`======================================================\n`);
   });
 }
 

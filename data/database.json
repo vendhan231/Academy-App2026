@@ -1,6 +1,108 @@
 {
   "users": [
     {
+      "_id": "usr_044ad6a1-3db",
+      "username": "newcoach2",
+      "password": "$2b$10$JZMdgtU1Ns1OaxaZYqf2Oezmgh68Ap.5rgPifMA5BBqnBFrVs3zEm",
+      "role": "coach",
+      "name": "New Coach",
+      "sport": "Yoga",
+      "phone": "",
+      "parentName": "",
+      "address": "",
+      "dateOfBirth": null,
+      "gender": "",
+      "sportLevel": "",
+      "enrollmentDate": null,
+      "bio": "",
+      "profilePhoto": "",
+      "fees": {
+        "total": 0,
+        "paid": 0,
+        "due": 0,
+        "paymentMethod": ""
+      },
+      "kitFees": {
+        "total": 0,
+        "paid": 0,
+        "due": 0,
+        "paymentMethod": ""
+      },
+      "coachSalary": {
+        "amount": 0,
+        "status": "Pending"
+      },
+      "createdAt": "2026-10-28T12:07:00.048Z"
+    },
+    {
+      "_id": "usr_f642b447-d05",
+      "username": "teststu3",
+      "password": "$2b$10$uky7v.oJRpnA2zXXiw7jfuk/zEZc4..lonKRsO1ZqTTd5lwxOeslW",
+      "role": "student",
+      "name": "Test Student",
+      "sport": "Yoga",
+      "phone": "",
+      "parentName": "",
+      "address": "",
+      "dateOfBirth": null,
+      "gender": "",
+      "sportLevel": "",
+      "enrollmentDate": null,
+      "bio": "",
+      "profilePhoto": "",
+      "fees": {
+        "total": 18000,
+        "paid": 10000,
+        "due": 8000,
+        "paymentMethod": ""
+      },
+      "kitFees": {
+        "total": 4000,
+        "paid": 2000,
+        "due": 2000,
+        "paymentMethod": ""
+      },
+      "coachSalary": {
+        "amount": 0,
+        "status": "Paid"
+      },
+      "createdAt": "2026-10-28T12:06:45.157Z"
+    },
+    {
+      "_id": "usr_451ad98b-834",
+      "username": "teststu2",
+      "password": "$2b$10$2Owu9fDqrLTn7QdVgp7WWucle5zgB9QZCW4HLbG96SQReHRcGLcJ.",
+      "role": "student",
+      "name": "Test Student",
+      "sport": "Yoga",
+      "phone": "",
+      "parentName": "",
+      "address": "",
+      "dateOfBirth": null,
+      "gender": "",
+      "sportLevel": "",
+      "enrollmentDate": null,
+      "bio": "",
+      "profilePhoto": "",
+      "fees": {
+        "total": 18000,
+        "paid": 10000,
+        "due": 8000,
+        "paymentMethod": ""
+      },
+      "kitFees": {
+        "total": 4000,
+        "paid": 2000,
+        "due": 2000,
+        "paymentMethod": ""
+      },
+      "coachSalary": {
+        "amount": 0,
+        "status": "Paid"
+      },
+      "createdAt": "2026-10-28T12:05:01.397Z"
+    },
+    {
       "_id": "usr_d1f753ff-26d",
       "username": "stu_test_hc_01",
       "password": "$2b$10$yeS/8i2BDepa54OCQDwi8OGvseUHtaSrfwWNKHq/F9YZZtrhvpECu",
@@ -61,12 +163,14 @@
       "fees": {
         "total": 0,
         "paid": 0,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "kitFees": {
         "total": 0,
         "paid": 0,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 38000,
@@ -85,12 +189,14 @@
       "fees": {
         "total": 15000,
         "paid": 12000,
-        "due": 3000
+        "due": 3000,
+        "paymentMethod": ""
       },
       "kitFees": {
         "total": 4000,
         "paid": 3500,
-        "due": 500
+        "due": 500,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 0,
@@ -109,12 +215,14 @@
       "fees": {
         "total": 0,
         "paid": 0,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "kitFees": {
         "total": 0,
         "paid": 0,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 39000,
@@ -133,12 +241,14 @@
       "fees": {
         "total": 0,
         "paid": 0,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "kitFees": {
         "total": 0,
         "paid": 0,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 35000,
@@ -157,7 +267,8 @@
       "fees": {
         "total": 20000,
         "paid": 18000,
-        "due": 2000
+        "due": 2000,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 0,
@@ -176,7 +287,8 @@
       "fees": {
         "total": 14000,
         "paid": 7000,
-        "due": 7000
+        "due": 7000,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 0,
@@ -195,7 +307,8 @@
       "fees": {
         "total": 22000,
         "paid": 12000,
-        "due": 10000
+        "due": 10000,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 0,
@@ -214,7 +327,8 @@
       "fees": {
         "total": 20000,
         "paid": 20000,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 0,
@@ -232,8 +346,9 @@
       "phone": "+91 98401 12345",
       "fees": {
         "total": 12000,
-        "paid": 8500,
-        "due": 3500
+        "paid": 9000,
+        "due": 3000,
+        "paymentMethod": "Online"
       },
       "coachSalary": {
         "amount": 0,
@@ -241,9 +356,10 @@
       },
       "createdAt": "2026-10-28T08:58:16.352Z",
       "kitFees": {
-        "total": 3500,
-        "paid": 3500,
-        "due": 0
+        "total": 4000,
+        "paid": 2000,
+        "due": 2000,
+        "paymentMethod": "Online"
       }
     },
     {
@@ -257,7 +373,8 @@
       "fees": {
         "total": 0,
         "paid": 0,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 45000,
@@ -276,7 +393,8 @@
       "fees": {
         "total": 0,
         "paid": 0,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 38000,
@@ -295,7 +413,8 @@
       "fees": {
         "total": 0,
         "paid": 0,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 42000,
@@ -314,7 +433,8 @@
       "fees": {
         "total": 0,
         "paid": 0,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 35000,
@@ -333,7 +453,8 @@
       "fees": {
         "total": 0,
         "paid": 0,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 55000,
@@ -352,7 +473,8 @@
       "fees": {
         "total": 0,
         "paid": 0,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 0,
@@ -371,7 +493,8 @@
       "fees": {
         "total": 0,
         "paid": 0,
-        "due": 0
+        "due": 0,
+        "paymentMethod": ""
       },
       "coachSalary": {
         "amount": 0,
@@ -810,9 +933,11 @@
       "targetUserId": "usr_ba311913-ebe",
       "date": "2026-10-28",
       "targetRole": "coach",
-      "status": "Late",
-      "markedBy": "usr_275ffe2f-def",
-      "createdAt": "2026-10-28T08:58:16.795Z"
+      "status": "Present",
+      "markedBy": "usr_9ddfd192-563",
+      "createdAt": "2026-10-28T08:58:16.795Z",
+      "sport": "Football",
+      "updatedAt": "2026-10-28T12:00:31.465Z"
     },
     {
       "_id": "att_3c4f61c6-645",

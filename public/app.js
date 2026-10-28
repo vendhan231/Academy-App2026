@@ -308,13 +308,8 @@ const ui = {
           <span class="font-mono text-[11px] text-slate-500">Superuser</span>
         </div>
         <p class="text-[11px] text-slate-600 mb-2.5">Full control over users, CMS content, coach salaries, and master logs.</p>
-        <div class="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-white border border-orange-200 shadow-xs">
-          <div class="text-[11px] font-mono text-slate-700">
-            User ID: <span class="font-bold text-slate-900">admin</span> | Password: <span class="font-bold text-slate-900">vendhan@123</span>
-          </div>
-          <button type="button" onclick="window.auth.fillCredentials('admin', 'vendhan@123')" class="px-2.5 py-1 rounded-md bg-brand-600 hover:bg-brand-500 text-white font-bold text-[11px] shadow-xs cursor-pointer">
-            Auto-fill
-          </button>
+        <div class="p-2.5 rounded-lg bg-white border border-orange-200 shadow-xs text-[11px] text-slate-600">
+          Enter your administrator username and password to sign in. Demo credentials are not displayed for security.
         </div>
       `;
     } else if (portalId === 'coach') {
@@ -329,26 +324,8 @@ const ui = {
           <span class="font-mono text-[11px] text-slate-500">2 Presets</span>
         </div>
         <div class="space-y-2">
-          <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-blue-200 text-[11px]">
-            <div>
-              <div class="font-bold text-slate-900">Regular Coach Dashboard</div>
-              <div class="font-mono text-slate-500">User ID: <span class="font-bold text-slate-800">coach</span> | PWD: <span class="font-bold text-slate-800">vendhan@123</span></div>
-            </div>
-            <button type="button" onclick="window.auth.fillCredentials('coach', 'vendhan@123')" class="px-2.5 py-1 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] shadow-xs cursor-pointer">
-              Fill Coach
-            </button>
-          </div>
-          <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-blue-200 text-[11px]">
-            <div>
-              <div class="font-bold text-slate-900 flex items-center gap-1.5">
-                <span>Head Coach Dashboard</span>
-                <span class="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 text-[9px] font-bold">Coach Attendance Powers</span>
-              </div>
-              <div class="font-mono text-slate-500">User ID: <span class="font-bold text-slate-800">vendhan</span> | PWD: <span class="font-bold text-slate-800">vendhan@123</span></div>
-            </div>
-            <button type="button" onclick="window.auth.fillCredentials('vendhan', 'vendhan@123')" class="px-2.5 py-1 rounded-md bg-amber-600 hover:bg-amber-500 text-white font-bold text-[11px] shadow-xs cursor-pointer">
-              Fill Head Coach
-            </button>
+          <div class="p-2 rounded-lg bg-white border border-blue-200 text-[11px] text-slate-600">
+            Use the username and password provided for your coach or head coach account. Demo credentials are not displayed for security.
           </div>
         </div>
       `;
@@ -364,13 +341,8 @@ const ui = {
           <span class="font-mono text-[11px] text-slate-500">Trainee Access</span>
         </div>
         <p class="text-[11px] text-slate-600 mb-2">Unique student IDs and credentials are dynamically allocated by Admin upon admission.</p>
-        <div class="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-white border border-purple-200 shadow-xs">
-          <div class="text-[11px] font-mono text-slate-700">
-            Demo Student ID: <span class="font-bold text-slate-900">student1</span> | PWD: <span class="font-bold text-slate-900">vendhan@123</span>
-          </div>
-          <button type="button" onclick="window.auth.fillCredentials('student1', 'vendhan@123')" class="px-2.5 py-1 rounded-md bg-purple-600 hover:bg-purple-500 text-white font-bold text-[11px] shadow-xs cursor-pointer">
-            Use Demo
-          </button>
+        <div class="p-2.5 rounded-lg bg-white border border-purple-200 shadow-xs text-[11px] text-slate-600">
+          Use the student ID and password allocated by the Admin. Demo credentials are not displayed for security.
         </div>
       `;
     }
@@ -592,135 +564,7 @@ const router = {
           </div>
         </section>
 
-        <!-- Three Academy Login Portals Section -->
-        <section id="portals" class="space-y-6 scroll-mt-24">
-          <div class="text-center max-w-2xl mx-auto space-y-2">
-            <div class="inline-flex items-center gap-2 text-xs font-bold text-brand-600 uppercase tracking-wider">
-              <i class="fa-solid fa-id-badge"></i> Role-Based Dashboards
-            </div>
-            <h2 class="text-3xl font-extrabold text-slate-900 font-display">Three Centralized Academy Portals</h2>
-            <p class="text-slate-500 text-xs sm:text-sm">Distinct portals engineered with strict role-based access control (RBAC) and synchronized records.</p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- 1. Admin Portal Card -->
-            <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-brand-300 hover:shadow-md transition flex flex-col justify-between">
-              <div>
-                <div class="flex items-center justify-between mb-4">
-                  <div class="w-12 h-12 rounded-xl bg-orange-50 border border-orange-200 text-brand-600 flex items-center justify-center text-xl shadow-xs">
-                    <i class="fa-solid fa-shield-halved"></i>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-red-50 text-sportsRed-600 border border-red-200">
-                    Superuser
-                  </span>
-                </div>
-                <h3 class="text-lg font-bold text-slate-900 font-display mb-1.5">Admin Command Portal</h3>
-                <p class="text-xs text-slate-500 leading-relaxed mb-4">Complete academy management: user credential provisioning, official logo/CMS editing, coach payroll, and master attendance logs.</p>
-                
-                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1 mb-4 text-[11px] font-mono text-slate-700">
-                  <div class="flex justify-between"><span>User ID:</span><span class="font-bold text-slate-900">admin</span></div>
-                  <div class="flex justify-between"><span>Password:</span><span class="font-bold text-slate-900">vendhan@123</span></div>
-                </div>
-              </div>
-              <button onclick="window.ui.openLoginModal('admin')" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer">
-                <span>Access Admin Portal</span>
-                <i class="fa-solid fa-arrow-right text-[10px]"></i>
-              </button>
-            </div>
-
-            <!-- 2. Coach & Head Coach Portal Card -->
-            <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-blue-300 hover:shadow-md transition flex flex-col justify-between">
-              <div>
-                <div class="flex items-center justify-between mb-4">
-                  <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center text-xl shadow-xs">
-                    <i class="fa-solid fa-whistle"></i>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-50 text-blue-700 border border-blue-200">
-                    Faculty & Oversight
-                  </span>
-                </div>
-                <h3 class="text-lg font-bold text-slate-900 font-display mb-1.5">Coach & Head Coach Portal</h3>
-                <p class="text-xs text-slate-500 leading-relaxed mb-4">6-discipline student attendance marking & dual fee ledger. Head Coach has exclusive oversight for tracking coach attendance.</p>
-                
-                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 mb-4 text-[11px] font-mono text-slate-700">
-                  <div class="flex justify-between items-center">
-                    <span>Coach:</span>
-                    <span class="font-bold text-slate-900">coach / vendhan@123</span>
-                  </div>
-                  <div class="flex justify-between items-center pt-1 border-t border-slate-200">
-                    <span class="text-amber-700 font-bold">Head Coach:</span>
-                    <span class="font-bold text-slate-900">vendhan / vendhan@123</span>
-                  </div>
-                </div>
-              </div>
-              <button onclick="window.ui.openLoginModal('coach')" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer">
-                <span>Access Coach Portal</span>
-                <i class="fa-solid fa-arrow-right text-[10px]"></i>
-              </button>
-            </div>
-
-            <!-- 3. Student Portal Card -->
-            <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-purple-300 hover:shadow-md transition flex flex-col justify-between">
-              <div>
-                <div class="flex items-center justify-between mb-4">
-                  <div class="w-12 h-12 rounded-xl bg-purple-50 border border-purple-200 text-purple-600 flex items-center justify-center text-xl shadow-xs">
-                    <i class="fa-solid fa-graduation-cap"></i>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-purple-50 text-purple-700 border border-purple-200">
-                    Trainee Access
-                  </span>
-                </div>
-                <h3 class="text-lg font-bold text-slate-900 font-display mb-1.5">Student Athlete Portal</h3>
-                <p class="text-xs text-slate-500 leading-relaxed mb-4">View-only dashboard with live synchronized attendance percentage, personal training logs, and dual tuition/kit fee balances.</p>
-                
-                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1 mb-4 text-[11px] font-mono text-slate-700">
-                  <div class="flex justify-between"><span>Provisioned:</span><span class="font-bold text-slate-900">Allocated by Admin</span></div>
-                  <div class="flex justify-between"><span>Demo Trainee:</span><span class="font-bold text-slate-900">student1 / vendhan@123</span></div>
-                </div>
-              </div>
-              <button onclick="window.ui.openLoginModal('student')" class="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer">
-                <span>Access Student Portal</span>
-                <i class="fa-solid fa-arrow-right text-[10px]"></i>
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <!-- 6 Disciplines Grid -->
-        <section id="disciplines" class="space-y-8 scroll-mt-24">
-          <div class="text-center max-w-2xl mx-auto space-y-3">
-            <div class="inline-flex items-center gap-2 text-xs font-bold text-brand-600 uppercase tracking-wider">
-              <i class="fa-solid fa-medal"></i> Sports Curriculums
-            </div>
-            <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 font-display">6 Core Sports Disciplines</h2>
-            <p class="text-slate-500 text-sm">Professional coaching from grassroots to national tournament circuits.</p>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            ${ACADEMY_SPORTS.map((sport) => `
-              <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-brand-300 transition duration-300 flex flex-col justify-between group">
-                <div>
-                  <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr ${sport.gradient} flex items-center justify-center text-white text-2xl shadow-md mb-4 group-hover:scale-105 transition">
-                    <i class="fa-solid ${sport.icon}"></i>
-                  </div>
-                  <div class="flex items-center justify-between mb-2">
-                    <h3 class="font-bold text-slate-900 text-lg font-display">${sport.name}</h3>
-                    <span class="text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full ${sport.badge}">Batch Open</span>
-                  </div>
-                  <p class="text-xs text-slate-600 leading-relaxed mb-4">${sport.description}</p>
-                </div>
-                <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
-                  <span>Age: 5 to 22 Yrs</span>
-                  <span class="${sport.color} font-bold flex items-center gap-1">
-                    <span>Active Sessions</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
-                  </span>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </section>
-
-        <!-- Weekly Schedule Timetable -->
+<!-- Weekly Schedule Timetable -->
         <section id="schedule" class="space-y-6 scroll-mt-24">
           <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
@@ -889,6 +733,11 @@ const router = {
           }">
             <i class="fa-solid fa-table-cells-large"></i> Interactive Training Grid
           </button>
+          <button onclick="window.coach.switchTab('student_profiles_coach')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
+            state.coachTab === 'student_profiles_coach' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }">
+            <i class="fa-solid fa-id-card"></i> Regular Student Profiles
+          </button>
           <button onclick="window.coach.switchTab('attendance_list')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
             state.coachTab === 'attendance_list' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }">
@@ -929,7 +778,7 @@ const router = {
             <p class="text-xs text-slate-500">Supervise staff across 6 disciplines, enroll regular students, monitor attendance, and inspect fees.</p>
           </div>
           <div class="flex flex-wrap items-center gap-3">
-            <button onclick="window.headCoach.openAddStudentModal()" class="px-5 py-2.5 rounded-xl bg-sportsGreen-600 hover:bg-sportsGreen-700 text-white font-bold text-xs shadow-md shadow-green-600/20 flex items-center gap-2 transition cursor-pointer">
+            <button onclick="openAddStudentModal()" class="px-5 py-2.5 rounded-xl bg-sportsGreen-600 hover:bg-sportsGreen-700 text-white font-bold text-xs shadow-md shadow-green-600/20 flex items-center gap-2 transition cursor-pointer">
               <i class="fa-solid fa-user-plus"></i> + Add New Student
             </button>
             <div class="text-xs text-slate-700 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200 font-medium">
@@ -954,6 +803,11 @@ const router = {
             state.headCoachTab === 'student_grid' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }">
             <i class="fa-solid fa-table-cells-large"></i> Student Training (6 Sports)
+          </button>
+          <button onclick="window.headCoach.switchTab('student_profiles_hc')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
+            state.headCoachTab === 'student_profiles_hc' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }">
+            <i class="fa-solid fa-id-card"></i> Regular Student Profiles
           </button>
           <button onclick="window.headCoach.switchTab('student_attendance_list')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
             state.headCoachTab === 'student_attendance_list' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -1011,6 +865,7 @@ const router = {
           ${[
             { id: 'overview', icon: 'fa-chart-pie', label: 'System Overview' },
             { id: 'users', icon: 'fa-users', label: 'User Management' },
+            { id: 'student_profiles', icon: 'fa-id-card', label: 'Regular Student Profiles' },
             { id: 'archive', icon: 'fa-box-archive', label: 'Student Archive' },
             { id: 'attendance', icon: 'fa-clipboard-user', label: 'Attendance (List)' },
             { id: 'fees', icon: 'fa-receipt', label: 'Dual Fees (List)' },
@@ -1119,6 +974,48 @@ const router = {
         const res = await api.get('/api/users');
         state.usersList = res.data || [];
         this.renderAdminUsersTab(container);
+      } else if (state.currentTab === 'student_profiles') {
+        const res = await api.get('/api/users?role=student');
+        const students = res.data || [];
+        container.innerHTML = `
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-bold text-slate-900 font-display">Regular Student Profiles</h3>
+                <p class="text-xs text-slate-500">Complete profiles with details, fees, and about section for all active regular students</p>
+              </div>
+              <span class="text-xs font-semibold text-slate-600">${students.length} Active Students</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              ${students.map((s) => `
+                <div class="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-brand-300 transition">
+                  <div class="flex items-start gap-3 mb-3">
+                    <button onclick="window.openStudentProfileModal('${s._id || s.id}')" class="w-12 h-12 rounded-full bg-gradient-to-br from-brand-100 to-brand-200 flex items-center justify-center text-brand-700 border-2 border-white shadow-sm hover:scale-105 transition">
+                      <i class="fa-solid fa-id-card text-lg"></i>
+                    </button>
+                    <div class="flex-1 min-w-0">
+                      <h4 class="font-bold text-slate-900 truncate">${s.name}</h4>
+                      <p class="text-xs text-slate-500 font-mono">ID: ${s.username}</p>
+                      <p class="text-xs text-brand-700 font-semibold">${s.sport || 'General'} ${s.sportLevel ? '(' + s.sportLevel + ')' : ''}</p>
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-xs">
+                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                      <span class="text-slate-500">Enrollment:</span> <span class="font-semibold text-slate-900">${s.enrollmentDate ? new Date(s.enrollmentDate).toLocaleDateString('en-IN') : 'N/A'}</span>
+                    </div>
+                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                      <span class="text-slate-500">Fees Due:</span> <span class="font-bold ${((s.fees?.due||0) + (s.kitFees?.due||0)) > 0 ? 'text-sportsRed-600' : 'text-sportsGreen-600'}">₹${((s.fees?.due||0) + (s.kitFees?.due||0)).toLocaleString('en-IN')}</span>
+                    </div>
+                    ${s.bio ? `<div class="p-2 rounded-lg bg-slate-50 border border-slate-200"><span class="text-slate-500 block mb-1">About:</span> <span class="text-slate-700 line-clamp-2">${s.bio}</span></div>` : ''}
+                  </div>
+                  <button onclick="window.openStudentProfileModal('${s._id || s.id}')" class="w-full mt-3 px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition">
+                    View Full Profile
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
       } else if (state.currentTab === 'archive') {
         await this.renderAdminArchiveTab(container);
       } else if (state.currentTab === 'attendance') {
@@ -1310,8 +1207,15 @@ const router = {
                   return `
                     <tr class="hover:bg-slate-50">
                       <td class="py-3.5 px-4">
-                        <div class="font-bold text-slate-900">${s.name}</div>
-                        <div class="text-[10px] text-slate-500 font-mono">ID: ${s.username}</div>
+                        <div class="flex items-center gap-2">
+                          <button onclick="window.openStudentProfileModal('${s._id || s.id}')" title="View Student Profile" class="w-8 h-8 rounded-full bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 flex items-center justify-center transition shrink-0">
+                            <i class="fa-solid fa-id-card text-sm"></i>
+                          </button>
+                          <div>
+                            <div class="font-bold text-slate-900">${s.name}</div>
+                            <div class="text-[10px] text-slate-500 font-mono">ID: ${s.username}</div>
+                          </div>
+                        </div>
                       </td>
                       <td class="py-3.5 px-4 text-slate-700 font-semibold">${s.sport || 'General'}</td>
                       <td class="py-3.5 px-4">
@@ -1535,9 +1439,9 @@ const router = {
           <!-- Profile Banner -->
           <div class="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div class="flex items-center gap-4">
-              <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white text-2xl shadow-md">
-                <i class="fa-solid fa-user-graduate"></i>
-              </div>
+              <button onclick="window.openStudentProfileModal('${profile.id || state.user?._id || state.user?.id}')" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white text-2xl shadow-md hover:scale-105 transition" title="View Full Profile">
+                <i class="fa-solid fa-id-card"></i>
+              </button>
               <div>
                 <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200 text-[11px] font-bold uppercase tracking-wider mb-1">
                   Enrolled Athlete
@@ -1547,12 +1451,17 @@ const router = {
               </div>
             </div>
 
-            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1">
-              <div class="text-slate-500 font-bold uppercase text-[10px]">Assigned Coach:</div>
-              <div class="font-bold text-slate-900 flex items-center gap-1.5">
-                <i class="fa-solid fa-whistle text-brand-600"></i> ${profile.assignedCoach?.name || 'Academy Coach'}
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <button onclick="window.openStudentProfileModal('${profile.id || state.user?._id || state.user?.id}')" class="px-4 py-2.5 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 font-bold text-xs flex items-center justify-center gap-2 transition">
+                <i class="fa-solid fa-id-card"></i> View Full Profile
+              </button>
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1">
+                <div class="text-slate-500 font-bold uppercase text-[10px]">Assigned Coach:</div>
+                <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                  <i class="fa-solid fa-whistle text-brand-600"></i> ${profile.assignedCoach?.name || 'Academy Coach'}
+                </div>
+                <div class="text-slate-500 text-[11px]"><i class="fa-solid fa-phone mr-1"></i> ${profile.assignedCoach?.phone || '+91 98765 11001'}</div>
               </div>
-              <div class="text-slate-500 text-[11px]"><i class="fa-solid fa-phone mr-1"></i> ${profile.assignedCoach?.phone || '+91 98765 11001'}</div>
             </div>
           </div>
 
@@ -1755,6 +1664,49 @@ const coach = {
 
     if (state.coachTab === 'workspace') {
       await this.renderCoachWorkspaceTab(container);
+    } else if (state.coachTab === 'student_profiles_coach') {
+      try {
+        const res = await api.get('/api/users?role=student');
+        const students = res.data || [];
+        container.innerHTML = `
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
+              <div>
+                <h3 class="text-base font-bold text-slate-900 font-display">Regular Student Profiles</h3>
+                <p class="text-xs text-slate-500">View student details, fees, and about section (View-only access)</p>
+              </div>
+              <span class="text-xs font-semibold text-slate-600">${students.length} Active Students</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              ${students.map((s) => `
+                <div class="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-brand-300 transition">
+                  <div class="flex items-start gap-3 mb-3">
+                    <button onclick="window.openStudentProfileModal('${s._id || s.id}')" class="w-12 h-12 rounded-full bg-gradient-to-br from-brand-100 to-brand-200 flex items-center justify-center text-brand-700 border-2 border-white shadow-sm">
+                      <i class="fa-solid fa-id-card text-lg"></i>
+                    </button>
+                    <div class="flex-1 min-w-0">
+                      <h4 class="font-bold text-slate-900 truncate">${s.name}</h4>
+                      <p class="text-xs text-slate-500 font-mono">ID: ${s.username}</p>
+                      <p class="text-xs text-brand-700 font-semibold">${s.sport || 'General'}</p>
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-xs">
+                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                      <span class="text-slate-500">Fees Due:</span> <span class="font-bold ${((s.fees?.due||0) + (s.kitFees?.due||0)) > 0 ? 'text-sportsRed-600' : 'text-sportsGreen-600'}">₹${((s.fees?.due||0) + (s.kitFees?.due||0)).toLocaleString('en-IN')}</span>
+                    </div>
+                    ${s.bio ? `<div class="p-2 rounded-lg bg-slate-50 border border-slate-200"><span class="text-slate-500 block mb-1">About:</span> <span class="text-slate-700 line-clamp-2">${s.bio}</span></div>` : ''}
+                  </div>
+                  <button onclick="window.openStudentProfileModal('${s._id || s.id}')" class="w-full mt-3 px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition">
+                    View Profile
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        container.innerHTML = `<div class="p-4 text-sportsRed-600 text-xs">${err.message}</div>`;
+      }
     } else if (state.coachTab === 'attendance_list') {
       await this.renderCoachAttendanceListTab(container);
     } else if (state.coachTab === 'fees_list') {
@@ -1867,8 +1819,15 @@ const coach = {
                   return `
                     <tr class="hover:bg-slate-50">
                       <td class="py-3.5 px-4">
-                        <div class="font-bold text-slate-900 text-sm">${s.name}</div>
-                        <div class="text-[10px] text-slate-500 font-mono">ID: ${s.username} • Sport: ${s.sport}</div>
+                        <div class="flex items-center gap-2">
+                          <button onclick="window.openStudentProfileModal('${s._id || s.id}')" title="View Student Profile" class="w-8 h-8 rounded-full bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 flex items-center justify-center transition shrink-0">
+                            <i class="fa-solid fa-id-card text-sm"></i>
+                          </button>
+                          <div>
+                            <div class="font-bold text-slate-900 text-sm">${s.name}</div>
+                            <div class="text-[10px] text-slate-500 font-mono">ID: ${s.username} • Sport: ${s.sport}</div>
+                          </div>
+                        </div>
                       </td>
                       <td class="py-3.5 px-4">
                         <div class="flex items-center gap-2">
@@ -2000,8 +1959,15 @@ const coach = {
                     return `
                       <tr class="hover:bg-slate-50">
                         <td class="py-3.5 px-4">
-                          <div class="font-bold text-slate-900 text-sm">${s.name}</div>
-                          <div class="text-[10px] text-slate-500 font-mono">ID: ${s.username}</div>
+                          <div class="flex items-center gap-2">
+                            <button onclick="window.openStudentProfileModal('${s._id || s.id}')" title="View Student Profile" class="w-8 h-8 rounded-full bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 flex items-center justify-center transition shrink-0">
+                              <i class="fa-solid fa-id-card text-sm"></i>
+                            </button>
+                            <div>
+                              <div class="font-bold text-slate-900 text-sm">${s.name}</div>
+                              <div class="text-[10px] text-slate-500 font-mono">ID: ${s.username}</div>
+                            </div>
+                          </div>
                         </td>
                         <td class="py-3.5 px-4 text-slate-700 font-semibold">${s.sport || 'General'}</td>
                         <td class="py-3.5 px-4">
@@ -2133,12 +2099,14 @@ const fees = {
       const paid = Number(document.getElementById('edit-fee-paid').value);
       const kitTotal = Number(document.getElementById('edit-kit-total').value);
       const kitPaid = Number(document.getElementById('edit-kit-paid').value);
+      const paymentMethod = document.getElementById('edit-fee-payment-method').value;
 
       await api.put(`/api/students/${id}/fees`, {
         total,
         paid,
         kitTotal,
-        kitPaid
+        kitPaid,
+        paymentMethod
       });
 
       ui.toast('Student fees updated and saved successfully!', 'success');
@@ -2183,6 +2151,52 @@ const headCoach = {
       await this.renderCoachAttendanceListTab(container);
     } else if (state.headCoachTab === 'student_grid') {
       await coach.renderCoachWorkspaceTab(container);
+    } else if (state.headCoachTab === 'student_profiles_hc') {
+      try {
+        const res = await api.get('/api/users?role=student');
+        const students = res.data || [];
+        container.innerHTML = `
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
+              <div>
+                <h3 class="text-base font-bold text-slate-900 font-display">Regular Student Profiles</h3>
+                <p class="text-xs text-slate-500">View complete profiles, details, fees, and about section for all active students</p>
+              </div>
+              <span class="text-xs font-semibold text-slate-600">${students.length} Active Students</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              ${students.map((s) => `
+                <div class="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-brand-300 transition">
+                  <div class="flex items-start gap-3 mb-3">
+                    <button onclick="window.openStudentProfileModal('${s._id || s.id}')" class="w-12 h-12 rounded-full bg-gradient-to-br from-brand-100 to-brand-200 flex items-center justify-center text-brand-700 border-2 border-white shadow-sm hover:scale-105 transition">
+                      <i class="fa-solid fa-id-card text-lg"></i>
+                    </button>
+                    <div class="flex-1 min-w-0">
+                      <h4 class="font-bold text-slate-900 truncate">${s.name}</h4>
+                      <p class="text-xs text-slate-500 font-mono">ID: ${s.username}</p>
+                      <p class="text-xs text-brand-700 font-semibold">${s.sport || 'General'}</p>
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-xs">
+                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                      <span class="text-slate-500">Parent:</span> <span class="font-semibold text-slate-900">${s.parentName || 'N/A'}</span>
+                    </div>
+                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                      <span class="text-slate-500">Fees Due:</span> <span class="font-bold ${((s.fees?.due||0) + (s.kitFees?.due||0)) > 0 ? 'text-sportsRed-600' : 'text-sportsGreen-600'}">₹${((s.fees?.due||0) + (s.kitFees?.due||0)).toLocaleString('en-IN')}</span>
+                    </div>
+                    ${s.bio ? `<div class="p-2 rounded-lg bg-slate-50 border border-slate-200"><span class="text-slate-500 block mb-1">About:</span> <span class="text-slate-700 line-clamp-2">${s.bio}</span></div>` : ''}
+                  </div>
+                  <button onclick="window.openStudentProfileModal('${s._id || s.id}')" class="w-full mt-3 px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition">
+                    View Full Profile
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        container.innerHTML = `<div class="p-4 text-sportsRed-600 text-xs">${err.message}</div>`;
+      }
     } else if (state.headCoachTab === 'student_attendance_list') {
       await this.renderStudentAttendanceListTab(container);
     } else if (state.headCoachTab === 'fees_list') {
@@ -2439,8 +2453,15 @@ const headCoach = {
                     return `
                       <tr class="hover:bg-slate-50">
                         <td class="py-3.5 px-4">
-                          <div class="font-bold text-slate-900 text-sm">${s.name}</div>
-                          <div class="text-[10px] text-slate-500 font-mono">ID: ${s.username}</div>
+                          <div class="flex items-center gap-2">
+                            <button onclick="window.openStudentProfileModal('${s._id || s.id}')" title="View Student Profile" class="w-8 h-8 rounded-full bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 flex items-center justify-center transition shrink-0">
+                              <i class="fa-solid fa-id-card text-sm"></i>
+                            </button>
+                            <div>
+                              <div class="font-bold text-slate-900 text-sm">${s.name}</div>
+                              <div class="text-[10px] text-slate-500 font-mono">ID: ${s.username}</div>
+                            </div>
+                          </div>
                         </td>
                         <td class="py-3.5 px-4 text-slate-700 font-semibold">${s.sport || 'General'}</td>
                         <td class="py-3.5 px-4">
@@ -2500,7 +2521,7 @@ const headCoach = {
   openAddStudentModal() {
     const form = document.getElementById('form-add-student-hc');
     if (form) form.reset();
-    document.getElementById('hc-student-password').value = 'vendhan@123';
+    document.getElementById('hc-student-password').value = '';
     document.getElementById('hc-student-total-fee').value = '18000';
     document.getElementById('hc-student-paid-fee').value = '10000';
     document.getElementById('hc-student-kit-total').value = '4000';
@@ -2563,6 +2584,11 @@ const headCoach = {
 };
 
 window.headCoach = headCoach;
+window.openAddStudentModal = function() {
+  if (window.headCoach && typeof window.headCoach.openAddStudentModal === 'function') {
+    window.headCoach.openAddStudentModal();
+  }
+};
 
 // -------------------------------------------------------------
 // 8. Admin Domain Controller (Admin Logo Upload & Management)
@@ -3026,3 +3052,179 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
   router.init();
 });
+
+// Student Profile Modal - Icon-Driven, Responsive, Role-Aware
+window.openStudentProfileModal = async function(studentId) {
+  try {
+    const res = await fetch('/api/students/' + encodeURIComponent(studentId) + '/profile', {
+      headers: { 'Authorization': 'Bearer ' + (state.token || localStorage.getItem('vsa_token') || '') }
+    });
+    const json = await res.json();
+    if (!json.success) { 
+      alert(json.message || 'Failed to load profile'); 
+      return; 
+    }
+    const s = json.data || {};
+    
+    // Calculate fee statuses
+    const tuitionTotal = s.fees?.total || 0;
+    const tuitionPaid = s.fees?.paid || 0;
+    const tuitionDue = s.fees?.due !== undefined ? s.fees.due : Math.max(0, tuitionTotal - tuitionPaid);
+    
+    const kitTotal = s.kitFees?.total || 0;
+    const kitPaid = s.kitFees?.paid || 0;
+    const kitDue = s.kitFees?.due !== undefined ? s.kitFees.due : Math.max(0, kitTotal - kitPaid);
+    
+    const totalDue = tuitionDue + kitDue;
+    const totalFee = tuitionTotal + kitTotal;
+    const totalPaid = tuitionPaid + kitPaid;
+    
+    let overallStatus = 'Paid';
+    let statusClass = 'bg-green-50 text-sportsGreen-700 border-green-200';
+    if (totalDue > 0 && totalPaid > 0) {
+      overallStatus = 'Partial';
+      statusClass = 'bg-amber-50 text-amber-700 border-amber-200';
+    } else if (totalDue > 0 && totalPaid === 0) {
+      overallStatus = 'Overdue';
+      statusClass = 'bg-red-50 text-sportsRed-700 border-red-200';
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-sm';
+    modal.onclick = function(e) {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    };
+    modal.innerHTML = `
+      <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[95vh] overflow-y-auto relative shadow-2xl">
+        <button class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900 transition z-10" onclick="this.closest('.fixed').remove()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        
+        <!-- Header -->
+        <div class="p-6 sm:p-8 border-b border-slate-200">
+          <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-brand-100 to-brand-200 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg shrink-0">
+              ${s.profilePhoto ? `<img src="${s.profilePhoto}" class="w-full h-full object-cover"/>` : '<i class="fa-solid fa-circle-user text-4xl sm:text-5xl text-brand-600"></i>'}
+            </div>
+            <div class="flex-1 text-center sm:text-left space-y-2">
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 font-display">${s.name || 'N/A'}</h2>
+              <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3">
+                <span class="px-3 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold">
+                  <i class="fa-solid fa-id-card mr-1"></i> Allocated ID: ${s.username || s.id || 'N/A'}
+                </span>
+                <span class="px-3 py-1 rounded-lg bg-brand-50 text-brand-700 text-xs font-bold">
+                  <i class="fa-solid fa-medal mr-1"></i> ${s.sport || 'N/A'} ${s.sportLevel ? '(' + s.sportLevel + ')' : ''}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Academy Information -->
+        <div class="p-6 sm:p-8 space-y-6">
+          <section>
+            <h3 class="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-school text-brand-600"></i> Academy Information
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 font-semibold mb-1">Joining / Enrollment Date</p>
+                <p class="text-sm text-slate-900 font-bold">${s.enrollmentDate ? new Date(s.enrollmentDate).toLocaleDateString('en-IN') : (s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : 'N/A')}</p>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 font-semibold mb-1">Sport Level</p>
+                <p class="text-sm text-slate-900 font-bold">${s.sportLevel || 'Not Specified'}</p>
+              </div>
+            </div>
+            <div class="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <p class="text-xs text-slate-500 font-semibold mb-2">About Themselves & Achievements so far</p>
+              <p class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">${s.bio || 'No bio provided.'}</p>
+            </div>
+          </section>
+          
+          <!-- Fee Breakdown -->
+          <section>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-receipt text-brand-600"></i> Comprehensive Fee Breakdown
+              </h3>
+              <span class="px-3 py-1 rounded-full text-xs font-bold border ${statusClass}">
+                ${overallStatus}
+              </span>
+            </div>
+            <div class="space-y-3">
+              <div class="p-4 rounded-xl border border-slate-200">
+                <h4 class="text-sm font-bold text-slate-900 mb-2">Regular Tuition Fees</h4>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p class="text-xs text-slate-500">Total</p>
+                    <p class="text-sm font-bold text-slate-900">₹${tuitionTotal.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-slate-500">Amount Paid</p>
+                    <p class="text-sm font-bold text-sportsGreen-700">₹${tuitionPaid.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-slate-500">Balance Due</p>
+                    <p class="text-sm font-bold text-sportsRed-700">₹${tuitionDue.toLocaleString('en-IN')}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="p-4 rounded-xl border border-slate-200">
+                <h4 class="text-sm font-bold text-slate-900 mb-2">Sports Kit / Uniform Fees</h4>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p class="text-xs text-slate-500">Total</p>
+                    <p class="text-sm font-bold text-slate-900">₹${kitTotal.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-slate-500">Amount Paid</p>
+                    <p class="text-sm font-bold text-sportsGreen-700">₹${kitPaid.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-slate-500">Balance Due</p>
+                    <p class="text-sm font-bold text-sportsRed-700">₹${kitDue.toLocaleString('en-IN')}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          
+          <!-- Personal & Emergency Details -->
+          <section>
+            <h3 class="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-address-card text-brand-600"></i> Personal & Emergency Details
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 font-semibold">Date of Birth</p>
+                <p class="text-sm text-slate-900 font-medium">${s.dateOfBirth ? (typeof s.dateOfBirth === 'string' ? s.dateOfBirth : new Date(s.dateOfBirth).toLocaleDateString('en-IN')) : 'N/A'}</p>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 font-semibold">Gender</p>
+                <p class="text-sm text-slate-900 font-medium">${s.gender || 'N/A'}</p>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2">
+                <p class="text-xs text-slate-500 font-semibold">Parent/Guardian Name</p>
+                <p class="text-sm text-slate-900 font-medium">${s.parentName || 'N/A'}</p>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2">
+                <p class="text-xs text-slate-500 font-semibold">Contact Numbers</p>
+                <p class="text-sm text-slate-900 font-medium">${s.phone || 'N/A'}</p>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2">
+                <p class="text-xs text-slate-500 font-semibold">Residential Address</p>
+                <p class="text-sm text-slate-900 font-medium whitespace-pre-wrap">${s.address || 'N/A'}</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  } catch (e) {
+    console.error(e);
+    alert('Error loading profile');
+  }
+};

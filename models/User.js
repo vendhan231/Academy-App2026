@@ -42,17 +42,43 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  dateOfBirth: {
+    type: Date,
+    default: null
+  },
+  gender: {
+    type: String,
+    default: ''
+  },
+  sportLevel: {
+    type: String,
+    default: ''
+  },
+  enrollmentDate: {
+    type: Date,
+    default: null
+  },
+  bio: {
+    type: String,
+    default: ''
+  },
+  profilePhoto: {
+    type: String,
+    default: ''
+  },
   // Tuition / Academy Fees
   fees: {
     total: { type: Number, default: 0 },
     paid: { type: Number, default: 0 },
-    due: { type: Number, default: 0 }
+    due: { type: Number, default: 0 },
+    paymentMethod: { type: String, default: '' }
   },
   // Sports Kit / Uniform Fees
   kitFees: {
     total: { type: Number, default: 0 },
     paid: { type: Number, default: 0 },
-    due: { type: Number, default: 0 }
+    due: { type: Number, default: 0 },
+    paymentMethod: { type: String, default: '' }
   },
   coachSalary: {
     amount: { type: Number, default: 0 },
@@ -162,7 +188,8 @@ class UserModelWrapper {
       current.fees = {
         total: tot,
         paid: pd,
-        due: Math.max(0, tot - pd)
+        due: Math.max(0, tot - pd),
+        paymentMethod: updateObj.fees.paymentMethod ?? current.fees?.paymentMethod ?? ''
       };
       delete updateObj.fees;
     }
@@ -174,7 +201,8 @@ class UserModelWrapper {
       current.kitFees = {
         total: kTot,
         paid: kPd,
-        due: Math.max(0, kTot - kPd)
+        due: Math.max(0, kTot - kPd),
+        paymentMethod: updateObj.kitFees.paymentMethod ?? current.kitFees?.paymentMethod ?? ''
       };
       delete updateObj.kitFees;
     }
@@ -232,15 +260,23 @@ class UserModelWrapper {
       phone: userData.phone || '',
       parentName: userData.parentName || '',
       address: userData.address || '',
+      dateOfBirth: userData.dateOfBirth || null,
+      gender: userData.gender || '',
+      sportLevel: userData.sportLevel || '',
+      enrollmentDate: userData.enrollmentDate || null,
+      bio: userData.bio || '',
+      profilePhoto: userData.profilePhoto || '',
       fees: {
         total: totalFee,
         paid: paidFee,
-        due: dueFee
+        due: dueFee,
+        paymentMethod: userData.fees?.paymentMethod || ''
       },
       kitFees: {
         total: kitTotal,
         paid: kitPaid,
-        due: kitDue
+        due: kitDue,
+        paymentMethod: userData.kitFees?.paymentMethod || ''
       },
       coachSalary: {
         amount: Number(userData.coachSalary?.amount || 0),
@@ -271,11 +307,13 @@ class UserModelWrapper {
     const doc = { ...rawUser };
     doc.id = doc._id;
     if (!doc.kitFees) {
-      doc.kitFees = { total: 0, paid: 0, due: 0 };
+      doc.kitFees = { total: 0, paid: 0, due: 0, paymentMethod: '' };
     }
     if (!doc.fees) {
-      doc.fees = { total: 0, paid: 0, due: 0 };
+      doc.fees = { total: 0, paid: 0, due: 0, paymentMethod: '' };
     }
+    if (doc.fees && doc.fees.paymentMethod === undefined) doc.fees.paymentMethod = '';
+    if (doc.kitFees && doc.kitFees.paymentMethod === undefined) doc.kitFees.paymentMethod = '';
     doc.comparePassword = async function (candidatePassword) {
       return bcrypt.compare(candidatePassword, doc.password);
     };
