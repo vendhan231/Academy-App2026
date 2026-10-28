@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50 text-slate-900">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vendhan Sports Academy - Management System</title>
+  <meta name="description" content="Vendhan Sports Academy - Elite athletic platform in Roller Skating, Archery, Football, Yoga, Fitness & Silambam with dual fee management and real-time attendance." />
+  <meta property="og:title" content="Vendhan Sports Academy" />
+  <meta property="og:description" content="Elite athletic academy management platform featuring 6 sports disciplines, attendance, and dual fee management." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cabinet+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Cabinet Grotesk"', '"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              200: '#fed7aa',
+              300: '#fdba74',
+              400: '#fb923c',
+              500: '#f97316', // Vibrant Orange
+              600: '#ea580c', // Deep Athletic Orange
+              700: '#c2410c',
+              800: '#9a3412',
+              900: '#7c2d12',
+            },
+            sportsGreen: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            },
+            sportsRed: {
+              50: '#fef2f2',
+              100: '#fee2e2',
+              500: '#ef4444',
+              600: '#dc2626',
+              700: '#b91c1c',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+    /* White, Orange, Green, Red clean styling */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .badge-present {
+      background-color: #f0fdf4;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+    .badge-absent {
+      background-color: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+    .badge-late {
+      background-color: #fffbeb;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+    .sport-card-active {
+      border-color: #ea580c !important;
+      background: linear-gradient(135deg, #fff7ed, #ffffff) !important;
+      box-shadow: 0 4px 20px -2px rgba(234, 88, 12, 0.25);
+    }
+    .hero-glow {
+      background: radial-gradient(circle at 50% 30%, rgba(249, 115, 22, 0.15), transparent 70%);
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col bg-slate-50 font-sans text-slate-800 antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- Main Navigation Bar (Clean White Background with Orange Accents) -->
+  <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      
+      <!-- Brand Logo / Custom Uploaded Logo -->
+      <a href="#" onclick="window.router.navigate('home'); return false;" class="flex items-center space-x-3.5 group">
+        <!-- Logo Image Container with dynamic logo support -->
+        <div class="relative w-12 h-12 rounded-xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center shadow-md shadow-brand-500/20 group-hover:scale-105 transition overflow-hidden">
+          <img id="header-logo-image" src="" alt="Vendhan Logo" class="hidden w-full h-full object-cover" />
+          <div id="header-default-crest" class="flex items-center justify-center text-white text-xl">
+            <i class="fa-solid fa-trophy text-amber-300"></i>
+          </div>
+        </div>
+        <div>
+          <div class="text-xl font-black tracking-tight text-slate-900 flex items-center gap-1.5 font-display">
+            VENDHAN <span class="text-brand-600">SPORTS</span>
+          </div>
+          <p class="text-[11px] text-slate-500 font-semibold tracking-wide uppercase">6 Core Sports Disciplines</p>
+        </div>
+      </a>
+
+      <!-- Desktop Nav Items -->
+      <nav id="nav-public-links" class="hidden md:flex items-center space-x-6 text-sm font-semibold text-slate-600">
+        <a href="#about" class="hover:text-brand-600 transition">About</a>
+        <a href="#disciplines" class="hover:text-brand-600 transition">Disciplines</a>
+        <a href="#schedule" class="hover:text-brand-600 transition">Weekly Schedule</a>
+        <a href="#achievements" class="hover:text-brand-600 transition">Achievements</a>
+        <a href="#events" class="hover:text-brand-600 transition">Events</a>
+        <a href="#gallery" class="hover:text-brand-600 transition">Gallery</a>
+      </nav>
+
+      <!-- Auth Controls & Quick Demo Button -->
+      <div class="flex items-center space-x-3">
+        <!-- Quick Switcher Demo Button -->
+        <button onclick="window.ui.openLoginModal(true)" class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 shadow-xs transition">
+          <i class="fa-solid fa-bolt text-brand-600"></i> Demo Credentials
+        </button>
+
+        <div id="auth-buttons-container" class="flex items-center space-x-2">
+          <!-- Rendered dynamically by app.js: Sign In button or User Badge & Logout -->
+          <button onclick="window.ui.openLoginModal()" class="px-5 py-2 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-600/30 transition flex items-center gap-2">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In
+          </button>
+        </div>
+
+        <!-- Mobile Menu Trigger -->
+        <button id="mobile-menu-btn" onclick="window.ui.toggleMobileMenu()" class="md:hidden p-2 rounded-lg bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200">
+          <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Mobile Drawer Nav -->
+    <div id="mobile-nav" class="hidden md:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-3">
+      <a href="#about" onclick="window.ui.toggleMobileMenu()" class="block py-2 text-slate-700 hover:text-brand-600 font-medium">About Academy</a>
+      <a href="#disciplines" onclick="window.ui.toggleMobileMenu()" class="block py-2 text-slate-700 hover:text-brand-600 font-medium">6 Sports Disciplines</a>
+      <a href="#schedule" onclick="window.ui.toggleMobileMenu()" class="block py-2 text-slate-700 hover:text-brand-600 font-medium">Weekly Schedule</a>
+      <a href="#achievements" onclick="window.ui.toggleMobileMenu()" class="block py-2 text-slate-700 hover:text-brand-600 font-medium">Achievements</a>
+      <a href="#events" onclick="window.ui.toggleMobileMenu()" class="block py-2 text-slate-700 hover:text-brand-600 font-medium">Events & Meets</a>
+      <a href="#gallery" onclick="window.ui.toggleMobileMenu()" class="block py-2 text-slate-700 hover:text-brand-600 font-medium">Gallery</a>
+    </div>
+  </header>
+
+  <!-- Main Viewport Content Area -->
+  <main id="app-root" class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex items-center justify-center min-h-[50vh]">
+      <div class="text-center space-y-4">
+        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-brand-600"></i>
+        <p class="text-slate-500 font-medium">Loading Vendhan Sports Academy Portal...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Academy Footer (White Background with Crisp Borders) -->
+  <footer class="border-t border-slate-200 bg-white mt-16 py-12 text-slate-500 text-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center space-x-3.5">
+        <div class="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center text-white shadow-xs">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div>
+          <span class="font-bold text-slate-900 tracking-wide font-display">VENDHAN SPORTS ACADEMY</span>
+          <p class="text-xs text-slate-500">Skating • Archery • Football • Yoga • Fitness • Silambam</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-6 text-xs text-slate-600">
+        <span><i class="fa-solid fa-location-dot text-brand-600 mr-1.5"></i> Main Sports Complex, Tamil Nadu, India</span>
+        <span><i class="fa-solid fa-phone text-brand-600 mr-1.5"></i> +91 98765 43210</span>
+        <span><i class="fa-solid fa-envelope text-brand-600 mr-1.5"></i> admissions@vendhansports.com</span>
+      </div>
+      <div class="text-xs text-slate-400">
+        &copy; 2026 Vendhan Sports Academy. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- ------------------------------------------------------------- -->
+  <!-- MODALS (WHITE & CRISP THEME) -->
+  <!-- ------------------------------------------------------------- -->
+
+  <!-- Login & Role Switcher Modal (3 Dedicated Portals) -->
+  <div id="modal-login" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden p-6 sm:p-8">
+      
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 border border-brand-200 flex items-center justify-center">
+            <i class="fa-solid fa-id-card-clip text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 font-display">Academy Role Portals</h3>
+            <p class="text-xs text-slate-500">Select your authorized portal & sign in</p>
+          </div>
+        </div>
+        <button onclick="window.ui.closeModal('modal-login')" class="text-slate-400 hover:text-slate-700 p-2 cursor-pointer">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- 3 Login Portals Selector Tabs -->
+      <div class="grid grid-cols-3 gap-1.5 p-1.5 rounded-xl bg-slate-100 border border-slate-200 mb-5">
+        <button type="button" id="tab-portal-admin" onclick="window.ui.selectPortalTab('admin')" class="py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer bg-white text-brand-600 shadow-xs border border-slate-200">
+          <i class="fa-solid fa-shield-halved text-sm"></i>
+          <span>Admin Portal</span>
+        </button>
+        <button type="button" id="tab-portal-coach" onclick="window.ui.selectPortalTab('coach')" class="py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer text-slate-600 hover:text-slate-900">
+          <i class="fa-solid fa-whistle text-sm"></i>
+          <span>Coach Portal</span>
+        </button>
+        <button type="button" id="tab-portal-student" onclick="window.ui.selectPortalTab('student')" class="py-2 px-1 rounded-lg text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer text-slate-600 hover:text-slate-900">
+          <i class="fa-solid fa-graduation-cap text-sm"></i>
+          <span>Student Portal</span>
+        </button>
+      </div>
+
+      <!-- Dynamic Portal Banner & Quick Credentials -->
+      <div id="portal-info-box" class="mb-5 p-3.5 rounded-xl bg-brand-50/70 border border-brand-200">
+        <!-- Rendered dynamically by window.ui.selectPortalTab() -->
+      </div>
+
+      <!-- Standard Login Form -->
+      <form id="form-login" onsubmit="window.auth.handleLoginSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1.5" id="login-username-label">User ID / Username</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+              <i class="fa-solid fa-user"></i>
+            </span>
+            <input type="text" id="login-username" required placeholder="User ID" class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1.5">Password</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+              <i class="fa-solid fa-lock"></i>
+            </span>
+            <input type="password" id="login-password" required placeholder="••••••••" class="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm" />
+            <button type="button" onclick="window.ui.togglePasswordVisibility('login-password')" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
+              <i class="fa-solid fa-eye text-sm"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="login-error" class="hidden p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-sportsRed-600 font-medium"></div>
+
+        <button type="submit" id="login-btn-submit" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm shadow-md shadow-brand-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
+          <span id="login-submit-label">Sign In to Admin Portal</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add User Modal (Admin only) -->
+  <div id="modal-add-user" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-brand-600"></i> Register New Academy User
+        </h3>
+        <button onclick="window.ui.closeModal('modal-add-user')" class="text-slate-400 hover:text-slate-700">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="form-add-user" onsubmit="window.admin.handleAddUserSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Role Type *</label>
+          <select id="new-user-role" onchange="window.admin.onRoleChange(this.value)" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500">
+            <option value="student">Student (Trainee)</option>
+            <option value="coach">Regular Coach</option>
+            <option value="head_coach">Head Coach</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">User ID / Username *</label>
+            <input type="text" id="new-user-username" required placeholder="e.g. STU205, coach_selvam" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Password *</label>
+            <input type="text" id="new-user-password" required value="vendhan@123" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Full Name *</label>
+            <input type="text" id="new-user-name" required placeholder="e.g. Anand Kumar" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Phone Number</label>
+            <input type="text" id="new-user-phone" placeholder="+91 98765 00000" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Sport / Discipline *</label>
+          <select id="new-user-sport" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500">
+            <option value="Roller Skating">Roller Skating</option>
+            <option value="Archery">Archery</option>
+            <option value="Football">Football</option>
+            <option value="Yoga">Yoga</option>
+            <option value="Physical Fitness">Physical Fitness</option>
+            <option value="Silambam">Silambam</option>
+          </select>
+        </div>
+
+        <!-- Student Dual Fees: Academy Tuition + Sports Kit Fees -->
+        <div id="section-student-fees" class="space-y-3">
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+            <div class="text-xs font-bold text-brand-700 uppercase flex items-center justify-between">
+              <span><i class="fa-solid fa-graduation-cap mr-1.5 text-brand-600"></i> 1. Academy Tuition Fees (₹)</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">Total Fee (₹)</label>
+                <input type="number" id="new-user-total-fee" value="18000" min="0" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">Paid Amount (₹)</label>
+                <input type="number" id="new-user-paid-fee" value="10000" min="0" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm" />
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+            <div class="text-xs font-bold text-amber-700 uppercase flex items-center justify-between">
+              <span><i class="fa-solid fa-shirt mr-1.5 text-amber-600"></i> 2. Sports Kit & Uniform Fees (₹)</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">Kit Total (₹)</label>
+                <input type="number" id="new-user-kit-total" value="4000" min="0" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">Kit Paid (₹)</label>
+                <input type="number" id="new-user-kit-paid" value="2000" min="0" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coach Salary -->
+        <div id="section-coach-salary" class="hidden p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+          <div class="text-xs font-semibold text-amber-800 uppercase">Coach Salary Configuration (₹)</div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-600 mb-1">Monthly Salary (₹)</label>
+              <input type="number" id="new-coach-salary" value="38000" min="0" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-600 mb-1">Payment Status</label>
+              <select id="new-coach-status" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm">
+                <option value="Paid">Paid</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 flex justify-end gap-3">
+          <button type="button" onclick="window.ui.closeModal('modal-add-user')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold shadow-md shadow-brand-600/30">Create User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Dual Fee Management Modal (Triggered ONLY upon clicking Fees Icon) -->
+  <div id="modal-edit-fees" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 sm:p-8">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 border border-brand-200 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-receipt"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">Student Fee Details & Updation</h3>
+            <p class="text-xs text-slate-500">View breakdown & modify Tuition or Sports Kit amounts</p>
+          </div>
+        </div>
+        <button onclick="window.ui.closeModal('modal-edit-fees')" class="text-slate-400 hover:text-slate-700">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="form-edit-fees" onsubmit="window.fees.handleEditFeesSubmit(event)" class="space-y-4">
+        <input type="hidden" id="edit-fee-student-id" />
+        
+        <!-- Student Info Header -->
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex justify-between items-center">
+          <div>
+            Trainee: <span id="edit-fee-student-name" class="font-bold text-slate-900 text-sm"></span>
+          </div>
+          <span id="edit-fee-student-sport" class="px-3 py-1 rounded-full bg-brand-100 text-brand-800 font-bold border border-brand-200 text-[11px]"></span>
+        </div>
+
+        <!-- 1. Academy Tuition Fee Section -->
+        <div class="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-3">
+          <div class="text-xs font-bold text-slate-800 uppercase flex items-center justify-between">
+            <span class="flex items-center gap-1.5 text-brand-700">
+              <i class="fa-solid fa-graduation-cap text-brand-600"></i> Academy Tuition Fees
+            </span>
+            <span id="edit-fee-due-preview" class="font-extrabold text-sportsRed-600 px-2.5 py-0.5 rounded-full bg-red-50 border border-red-200">
+              Due: ₹0
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Total Tuition (₹)</label>
+              <input type="number" id="edit-fee-total" oninput="window.fees.recalcDue()" required min="0" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 text-sm font-semibold focus:outline-none focus:border-brand-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Paid Tuition (₹)</label>
+              <input type="number" id="edit-fee-paid" oninput="window.fees.recalcDue()" required min="0" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 text-sm font-semibold focus:outline-none focus:border-brand-500" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Kit / Uniform Fee Section -->
+        <div class="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-3">
+          <div class="text-xs font-bold text-slate-800 uppercase flex items-center justify-between">
+            <span class="flex items-center gap-1.5 text-amber-700">
+              <i class="fa-solid fa-shirt text-amber-600"></i> Sports Kit & Uniform Fees
+            </span>
+            <span id="edit-kit-due-preview" class="font-extrabold text-amber-700 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200">
+              Kit Due: ₹0
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Total Kit Fee (₹)</label>
+              <input type="number" id="edit-kit-total" oninput="window.fees.recalcDue()" required min="0" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 text-sm font-semibold focus:outline-none focus:border-brand-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Paid Kit Fee (₹)</label>
+              <input type="number" id="edit-kit-paid" oninput="window.fees.recalcDue()" required min="0" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 text-sm font-semibold focus:outline-none focus:border-brand-500" />
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-3">
+          <button type="button" onclick="window.ui.closeModal('modal-edit-fees')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-sportsGreen-600 hover:bg-sportsGreen-700 text-white text-sm font-bold shadow-md shadow-green-600/20 flex items-center gap-2">
+            <i class="fa-solid fa-check"></i> Save & Update Fees
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Coach Salary Modal (Admin only) -->
+  <div id="modal-edit-salary" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 sm:p-8">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i class="fa-solid fa-money-bill-wave text-amber-600"></i> Manage Coach Salary
+        </h3>
+        <button onclick="window.ui.closeModal('modal-edit-salary')" class="text-slate-400 hover:text-slate-700">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="form-edit-salary" onsubmit="window.admin.handleEditSalarySubmit(event)" class="space-y-4">
+        <input type="hidden" id="edit-salary-coach-id" />
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
+          Coach: <span id="edit-salary-coach-name" class="font-bold text-slate-900"></span>
+          (<span id="edit-salary-coach-sport" class="text-brand-600 font-semibold"></span>)
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Monthly Salary Amount (₹)</label>
+          <input type="number" id="edit-salary-amount" required min="0" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Disbursal Status</label>
+          <select id="edit-salary-status" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500">
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+
+        <div class="pt-3 flex justify-end gap-3">
+          <button type="button" onclick="window.ui.closeModal('modal-edit-salary')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold shadow-md shadow-brand-600/30">Update Salary</button>
+  <!-- Head Coach Enroll Active Student Modal -->
+  <div id="modal-add-student-hc" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-sportsGreen-50 text-sportsGreen-600 border border-green-200 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-user-plus"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 font-display">Enroll Active Student</h3>
+            <p class="text-xs text-slate-500">Add regular trainee into any of the 6 sports disciplines</p>
+          </div>
+        </div>
+        <button onclick="window.ui.closeModal('modal-add-student-hc')" class="text-slate-400 hover:text-slate-700">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="form-add-student-hc" onsubmit="window.headCoach.handleAddStudentSubmit(event)" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Student Login ID *</label>
+            <input type="text" id="hc-student-username" required placeholder="e.g. STU2026_01, anand_s" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Temporary Password *</label>
+            <input type="text" id="hc-student-password" required value="vendhan@123" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Student Full Name *</label>
+            <input type="text" id="hc-student-name" required placeholder="e.g. Anand Kumar" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Contact Phone</label>
+            <input type="text" id="hc-student-phone" placeholder="+91 98765 00000" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Sport / Discipline *</label>
+          <select id="hc-student-sport" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm font-semibold focus:outline-none focus:border-brand-500">
+            <option value="Roller Skating">Roller Skating</option>
+            <option value="Archery">Archery</option>
+            <option value="Football">Football</option>
+            <option value="Yoga">Yoga</option>
+            <option value="Physical Fitness">Physical Fitness</option>
+            <option value="Silambam">Silambam</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Parent / Guardian Name</label>
+            <input type="text" id="hc-student-parent" placeholder="e.g. S. Suresh & S. Priya" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Permanent Address</label>
+            <input type="text" id="hc-student-address" placeholder="e.g. Oddanchatram, Tamil Nadu" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+        </div>
+
+        <!-- Student Dual Fees -->
+        <div class="space-y-3 pt-2">
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+            <div class="text-xs font-bold text-brand-700 uppercase flex items-center justify-between">
+              <span><i class="fa-solid fa-graduation-cap mr-1.5 text-brand-600"></i> Academy Tuition Fees (₹)</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">Total Fee (₹)</label>
+                <input type="number" id="hc-student-total-fee" value="18000" min="0" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">Paid Amount (₹)</label>
+                <input type="number" id="hc-student-paid-fee" value="10000" min="0" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm" />
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+            <div class="text-xs font-bold text-amber-700 uppercase flex items-center justify-between">
+              <span><i class="fa-solid fa-shirt mr-1.5 text-amber-600"></i> Sports Kit & Uniform Fees (₹)</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">Kit Total (₹)</label>
+                <input type="number" id="hc-student-kit-total" value="4000" min="0" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">Kit Paid (₹)</label>
+                <input type="number" id="hc-student-kit-paid" value="2000" min="0" class="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 flex justify-end gap-3">
+          <button type="button" onclick="window.ui.closeModal('modal-add-student-hc')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-sportsGreen-600 hover:bg-sportsGreen-700 text-white text-sm font-bold shadow-md shadow-green-600/20 flex items-center gap-2">
+            <i class="fa-solid fa-user-plus"></i> Enroll Student
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Add Historical Archive Entry Modal -->
+  <div id="modal-add-archive" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 border border-brand-200 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-box-archive"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 font-display">New Archive Entry</h3>
+            <p class="text-xs text-slate-500">Record a legacy admission / alumnus into academy history</p>
+          </div>
+        </div>
+        <button onclick="window.ui.closeModal('modal-add-archive')" class="text-slate-400 hover:text-slate-700">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="form-add-archive" onsubmit="window.admin.handleAddArchiveSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Student Name *</label>
+          <input type="text" id="arch-student-name" required placeholder="e.g. S.PRIYADHARSHINI" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Sport / Disciplines Selected</label>
+            <input type="text" id="arch-sports-selected" placeholder="e.g. Skating, Archery, Silambam" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Date of Birth</label>
+            <input type="text" id="arch-dob" placeholder="e.g. 19.03.2014" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Gender</label>
+            <select id="arch-gender" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Enrollment Date</label>
+            <input type="text" id="arch-enrollment-date" placeholder="e.g. 30.10.2025" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Parent / Guardian Name</label>
+          <input type="text" id="arch-parent-name" placeholder="e.g. K.SELVARAJ, S.SUDHA" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Contact Phone Number(s)</label>
+          <input type="text" id="arch-contact" placeholder="e.g. 8217514241, 8072494794" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Permanent Address</label>
+          <textarea id="arch-address" rows="2" placeholder="e.g. THUMBACHIPATTI PUDHUR, KASTHURI NAGAR, ODDACHITHRAM" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500"></textarea>
+        </div>
+
+        <div class="pt-3 flex justify-end gap-3">
+          <button type="button" onclick="window.ui.closeModal('modal-add-archive')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-sm font-bold shadow-md shadow-brand-600/30 flex items-center gap-2">
+            <i class="fa-solid fa-box-archive"></i> Save to Archive
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Single-Page Application Client Logic -->
+  <script src="/app.js"></script>
+</body>
+</html>

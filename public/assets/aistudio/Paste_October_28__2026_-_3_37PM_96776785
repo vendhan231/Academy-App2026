@@ -1,0 +1,175 @@
+Master Prompt for Google AI Studio
+code
+Markdown
+Act as a Principal Full-Stack Engineer and System Architect. Update and generate the complete, production-ready Student Sports Academy application using Node.js, Express, MongoDB (Mongoose), JWT, and a Tailwind CSS Single-Page Application (SPA) frontend.
+
+Implement the following student management, archive tracking, role-based workflows, and automated database seeding without placeholders or truncated code.
+
+---
+
+### 1. STUDENT MANAGEMENT & ARCHIVE WORKFLOW
+
+#### A. Data Categories:
+1. **Regular Student Roster (Active Students)**:
+   - Contains currently enrolled active students with allocated Login ID, Password, Name, Sport, Contact, Tuition Fees, Kit/Uniform Fees, and Attendance tracking.
+   - Maintained by **Admin** and **Head Coach**.
+   - **Head Coach has full authority to add new students** to this active list (assigning ID, temporary password, name, sport, phone, tuition fees, and kit fees).
+
+2. **Student Archive (Historical / Legacy Records)**:
+   - Dedicated historical archive tracking former admissions and alumni.
+   - Viewable, searchable, and maintained by the **Admin**.
+   - Contains fields: `studentName`, `sportsSelected`, `dateOfBirth`, `gender`, `parentName`, `permanentAddress`, `contactNumber`, and `enrollmentDate`.
+
+---
+
+### 2. ROLE-BASED ACCESS & PERMISSION SPECIFICATIONS
+
+| Role | Default Login (ID / Password) | Permissions & Capabilities |
+| :--- | :--- | :--- |
+| **Admin** | `admin` / `vendhan@123` | - Full access to view & manage **Regular Student List**.<br>- Full access to view, filter, and search the **Student Archive**.<br>- Provision & manage all accounts, coach salaries, CMS, and finances. |
+| **Head Coach** | `vendhan` / `vendhan@123` | - Full access to maintain the **Regular Student List**.<br>- **Permission to ADD new regular students** (allocates ID, password, fee structures).<br>- Mark **Coach Attendance**.<br>- Mark student attendance & manage student fees (Tuition + Kit) across all sports. |
+| **Coach** | `coach` / `vendhan@123` | - Access to the interactive sports grid.<br>- Mark daily student attendance & update tuition/kit fees for active students. |
+| **Student** | Assigned ID & Password | - View-only access to personal profile, attendance log, tuition fee, and kit fee balance. |
+
+---
+
+### 3. DATABASE SCHEMAS (Mongoose)
+
+#### A. `ArchiveStudent.js`
+```javascript
+const mongoose = require('mongoose');
+
+const ArchiveStudentSchema = new mongoose.Schema({
+  studentName: { type: String, required: true },
+  sportsSelected: { type: String, default: 'General' },
+  dateOfBirth: { type: String, default: null },
+  gender: { type: String, default: null },
+  parentName: { type: String, default: null },
+  permanentAddress: { type: String, default: null },
+  contactNumber: { type: String, default: null },
+  enrollmentDate: { type: String, default: null },
+  archivedAt: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('ArchiveStudent', ArchiveStudentSchema);
+B. User.js (Active Students, Coaches, Admins)
+username: String, unique, required
+password: String (bcrypt hashed)
+role: Enum ['admin', 'head_coach', 'coach', 'student']
+name: String, required
+sport: String
+phone: String
+parentName: String
+address: String
+fees: { total: Number, paid: Number, due: Number }
+kitFees: { total: Number, paid: Number, due: Number }
+coachSalary: { amount: Number, status: Enum ['Paid', 'Pending'] }
+4. API ENDPOINTS
+POST /api/students: [Admin, Head Coach] Register/Add a new regular active student.
+GET /api/students: [Admin, Head Coach, Coach] Fetch active students (filterable by sport).
+GET /api/archive-students: [Admin only] Fetch all archived students with keyword search query (?search=).
+POST /api/archive-students: [Admin only] Manually archive an entry.
+PUT /api/students/:id/fees: [Admin, Head Coach, Coach] Update tuition & kit fees.
+POST /api/attendance/student: [Admin, Head Coach, Coach] Record student attendance.
+POST /api/attendance/coach: [Admin, Head Coach] Record coach attendance.
+5. UI/UX DASHBOARD ENHANCEMENTS
+Head Coach Dashboard:
+Add a prominent "+ Add New Student" button opening a clean modal to enroll an active student into any sport (Roller Skating, Archery, Football, Yoga, Physical Fitness, Silambam).
+Display the editable active student roster with dual fee trackers (Tuition & Kit) and attendance toggles.
+Dedicated tab to log and review Coach Attendance.
+Admin Dashboard:
+Add a dedicated "Student Archive" Tab:
+Search bar: Real-time search by student name, contact number, or sport.
+Responsive data table displaying student name, sport, DOB, gender, parent details, address, phone numbers, and enrollment date.
+Badge indicators for sports.
+6. SEED DATA REQUIREMENT (server.js)
+On database initialization, check if the ArchiveStudent collection is empty. If empty, automatically insert the following 85 archive records:
+code
+JSON
+[
+  {"studentName": "S.PRIYADHARSHINI", "sportsSelected": "Skating", "dateOfBirth": "19.03.2014", "gender": "FEMALE", "parentName": "K.SELVARAJ, S.SUDHA", "permanentAddress": "THUMBACHIPATTI PUDHUR, KASTHURI NAGAR, ODDACHITHRAM", "contactNumber": "8217514241, 8072494794", "enrollmentDate": "30.10.2025"},
+  {"studentName": "P. NAVVANTH", "sportsSelected": "Silambam", "dateOfBirth": "04-12-2019", "gender": "Male", "parentName": "K. Ponnagulan, P. Kavitha", "permanentAddress": "E-15 Kurinji nagar, Nadar store back, Oddanchatram", "contactNumber": "7845917290, 8489404170", "enrollmentDate": "02-02-2026"},
+  {"studentName": "Nandha kumaran.S", "sportsSelected": "Football", "dateOfBirth": "6/10/2016", "gender": "Male", "parentName": "Sivasubramaniyam & Vidhya", "permanentAddress": "APP Nagar, Oddanchatram", "contactNumber": "7639525355, 8072788164", "enrollmentDate": "15/7/2025"},
+  {"studentName": "K. VISHNU", "sportsSelected": "General", "dateOfBirth": "26-06-2018", "gender": "M", "parentName": "Karthik", "permanentAddress": "112-APP-Nagar -odc", "contactNumber": "9865797076", "enrollmentDate": "11/7/2025"},
+  {"studentName": "P. PON SHIVANI", "sportsSelected": "Skating", "dateOfBirth": "4.01.2020", "gender": "FEMALE", "parentName": "K. PAVITHRAN, P. PRIVA", "permanentAddress": "THUMBACHIPATTI PUDHUR, KASTHURI NAGAR, ODDANCHITHRAM", "contactNumber": "9629270361, 9025924634", "enrollmentDate": "30.10.2025"},
+  {"studentName": "S. Yugadhana", "sportsSelected": "Silambam", "dateOfBirth": "01.04.21", "gender": "Female", "parentName": "K. Suresh kumar, M. Poovizhi", "permanentAddress": "G.H (OPP)", "contactNumber": "9025622408", "enrollmentDate": "02.02.26"},
+  {"studentName": "Mithun Mithran", "sportsSelected": "Fitness", "dateOfBirth": "30.1.2013", "gender": "Male", "parentName": "Sri Vidya, Naresh Kumar", "permanentAddress": "220. Kurungi nagar, iswarya garden", "contactNumber": "9942517007", "enrollmentDate": null},
+  {"studentName": "S. SAKTIDHARAN", "sportsSelected": "Silambam", "dateOfBirth": "20.08.20", "gender": "Male", "parentName": "K. Saravanakumar", "permanentAddress": "117/15, A.P.P. nagar, odc", "contactNumber": "9489048082", "enrollmentDate": "2/2/26"},
+  {"studentName": "M. VINISHA SHREE", "sportsSelected": "Skating", "dateOfBirth": "19.04.2018", "gender": "Female", "parentName": "P. Malaiyappasamy, Nagalakshmi", "permanentAddress": "parai street, Thangachiyammal patti", "contactNumber": "9952269473, 9842973646", "enrollmentDate": null},
+  {"studentName": "A. Jeevith", "sportsSelected": "Football", "dateOfBirth": "21.12.2017", "gender": "Female", "parentName": "P. அறிவு, A. கவிதா", "permanentAddress": "A.S. Tex, Palani Road, Oddanchatram.", "contactNumber": "6374898050, 9731109945", "enrollmentDate": "7/7/25"},
+  {"studentName": "VIDHUMITHRAN. I", "sportsSelected": "Shuttle", "dateOfBirth": "30.12.2013", "gender": "Male", "parentName": "Ilango. V", "permanentAddress": "2/34B, Veeramuthu Salai, C.K. Valasu", "contactNumber": "9894590588", "enrollmentDate": "02/07/2025"},
+  {"studentName": "K. Kishor prasath", "sportsSelected": "Skating", "dateOfBirth": "14/10/2013", "gender": "Male", "parentName": "S. Kalidass.", "permanentAddress": "Kudalingapuram, oddanchatram.", "contactNumber": "9790810614", "enrollmentDate": null},
+  {"studentName": "Madhudharshan", "sportsSelected": "Skating", "dateOfBirth": "06.10.2018", "gender": "Male", "parentName": "Maruthamuthu", "permanentAddress": "2/75 Arasapillaipatty", "contactNumber": "7826810726", "enrollmentDate": "9.7.2025"},
+  {"studentName": "Dheeran Manojkumar", "sportsSelected": "Skating", "dateOfBirth": "05/02/2021", "gender": "Male", "parentName": "M. Manojkumar & V. Priyadharshini", "permanentAddress": "167/1, Vandippathai, Vadajadu (P.O), odc", "contactNumber": "9787403403", "enrollmentDate": null},
+  {"studentName": "M. YAAZHINI SHREE", "sportsSelected": "Shuttle", "dateOfBirth": "30.09.2014", "gender": "Female", "parentName": "A. MANIKANDAN", "permanentAddress": "Kasthuri Nagar, oddanchatram.", "contactNumber": "9894874241", "enrollmentDate": null},
+  {"studentName": "S. AKIL RISWANTH", "sportsSelected": "General", "dateOfBirth": "13/11/2017", "gender": "Male", "parentName": "A Sivakumar", "permanentAddress": "308/9, SAP Illam, Oddanchatram", "contactNumber": "9865859965", "enrollmentDate": null},
+  {"studentName": "BALA ADHITHYA. K", "sportsSelected": "Shuttle", "dateOfBirth": "11-NOV-2010", "gender": "Male", "parentName": "Krishnasamy. S", "permanentAddress": "VRIKSHAM, 333, SN pettai odc", "contactNumber": "8489934999, 8072447532", "enrollmentDate": "27-6-25"},
+  {"studentName": "S.K. hariganth", "sportsSelected": "Shuttle", "dateOfBirth": "12.11.2014", "gender": "Male", "parentName": "Sivaganesh kumar", "permanentAddress": "Thiruvalluvar salai oddanchatram.", "contactNumber": "9159054175", "enrollmentDate": null},
+  {"studentName": "R. Nowdeepak", "sportsSelected": "Shuttle", "dateOfBirth": "26.09.2011", "gender": "Male", "parentName": "V. Ravikumar", "permanentAddress": "3/308, Anna Nagar check post, odc", "contactNumber": "9487676460, 9486111153", "enrollmentDate": null},
+  {"studentName": "M. SAISRIRAM", "sportsSelected": "Skating, Shuttle", "dateOfBirth": "25.03.2018", "gender": "Male", "parentName": "A. MANIKANDAN", "permanentAddress": "Kasthuri Nagar, oddanchatram.", "contactNumber": "9894874241", "enrollmentDate": null},
+  {"studentName": "MAYA SURYA", "sportsSelected": "Skating", "dateOfBirth": "07/03/2017", "gender": "Female", "parentName": "SUKUMAR P SURYA", "permanentAddress": "111S METTUPATTI, ODDANCHATRAM 624619", "contactNumber": "8870797888", "enrollmentDate": null},
+  {"studentName": "ATHERA SURYA", "sportsSelected": "Skating", "dateOfBirth": "29/09/2020", "gender": "Female", "parentName": "SUKUMAR P SURYA", "permanentAddress": "111S METTUPATTI, ODDANCHATRAM 624619", "contactNumber": "8870797888", "enrollmentDate": null},
+  {"studentName": "K.R. DEV", "sportsSelected": "Shuttle", "dateOfBirth": "28-11-2018", "gender": "Male", "parentName": "K. Ranga durai", "permanentAddress": "2/150, Periyakaraipatti, oddanchatram", "contactNumber": "9788332294", "enrollmentDate": "30-6-25"},
+  {"studentName": "R. SIDDHARTH", "sportsSelected": "Shuttle", "dateOfBirth": "17-9-2013", "gender": "Male", "parentName": "K. Ranga durai", "permanentAddress": "2/150, Periyakaraipatty, oddanchatram", "contactNumber": "9788332294", "enrollmentDate": "30-6-25"},
+  {"studentName": "K. RAKSHANA SRI", "sportsSelected": "Skating", "dateOfBirth": "8.3.2019", "gender": "Female", "parentName": "Senbaga priya", "permanentAddress": "D/O 88 APP. Nagar, oddanchatram", "contactNumber": "9629390261", "enrollmentDate": null},
+  {"studentName": "R. SELVAMITHRAN", "sportsSelected": "Skating", "dateOfBirth": "20-NOV-2020", "gender": "Male", "parentName": "M. Rathinasamy, K. vidya", "permanentAddress": "957/2, suraikkaipatty, vadagadu - 624619", "contactNumber": "9080196856, 9884354142", "enrollmentDate": "13.06.2025"},
+  {"studentName": "S.R. SASHWIN", "sportsSelected": "Skating", "dateOfBirth": "15.09.2016", "gender": "Male", "parentName": "S. Ranjitha", "permanentAddress": "APP Nagar", "contactNumber": "8838584391", "enrollmentDate": "13.06.2025"},
+  {"studentName": "K. SRINITHI", "sportsSelected": "Skating", "dateOfBirth": "29.05.2017", "gender": "Female", "parentName": "P. KALIMUTHU", "permanentAddress": "D/No: 46 PONNU CORPORATION BACKSIDE, ODDANCHATRAM", "contactNumber": "9944948087", "enrollmentDate": "13.06.2025"},
+  {"studentName": "D. ATHIBAN", "sportsSelected": "Skating", "dateOfBirth": "07/01/2017", "gender": "Male", "parentName": "K. Dhanabal, P. Ramya devi", "permanentAddress": "423/9/8, PSM Pettai, Oddanchatram", "contactNumber": "9894599937, 9488867887", "enrollmentDate": "09/06/2025"},
+  {"studentName": "SHASTIK PRAVIN", "sportsSelected": "Skating", "dateOfBirth": "15-07-2021", "gender": "Male", "parentName": "M. PRAVIN KUMAR", "permanentAddress": "1/6 ELLAI PATTI, PUNCHATRAM (PO) DINDIGUL-TK", "contactNumber": "9941448140", "enrollmentDate": "11-04-2026"},
+  {"studentName": "IMAI MANIYAN", "sportsSelected": "Archery", "dateOfBirth": "10-10-2020", "gender": "MALE", "parentName": "ARUNMANIYAN, SUVATHI", "permanentAddress": "Interlock Mesh Belt, 7/612 Koochikalpudur, Namakkal", "contactNumber": "8883139139, 9187403403", "enrollmentDate": "11/04/2025"},
+  {"studentName": "P. MITRAN", "sportsSelected": "Archery", "dateOfBirth": null, "gender": "M", "parentName": "muthu tamil selvi", "permanentAddress": null, "contactNumber": "9538210428", "enrollmentDate": null},
+  {"studentName": "V. KAVIMITHRA", "sportsSelected": "Summer Camp", "dateOfBirth": "29.05.19", "gender": "Female", "parentName": "C. Veeramani, K. Vargiyathal", "permanentAddress": "periya kottai (PO) oddanchattram, Dindigul", "contactNumber": "9025235894, 9629163066", "enrollmentDate": null},
+  {"studentName": "T. IRA", "sportsSelected": "Archery", "dateOfBirth": "4.10.2018", "gender": "F", "parentName": "Lavanya. S", "permanentAddress": "oddanchatram, siva complex", "contactNumber": "8075752433", "enrollmentDate": "11-4-2026"},
+  {"studentName": "KAYAL. P", "sportsSelected": "Archery", "dateOfBirth": null, "gender": "F", "parentName": "Muthu tamil selvi", "permanentAddress": null, "contactNumber": "9538210428", "enrollmentDate": null},
+  {"studentName": "M. YAZHINBAN", "sportsSelected": "Skating", "dateOfBirth": "27.11.2019", "gender": "MALE", "parentName": "Mahesh kumar. M", "permanentAddress": "8m/10, Burma saw mill OPP, Dharapuram road oddanchatram", "contactNumber": "9789456641", "enrollmentDate": "11.04.26"},
+  {"studentName": "MUGIL VARUN. V", "sportsSelected": "General", "dateOfBirth": "09-05-2021", "gender": "Male", "parentName": "S. VINOTH KUMAR", "permanentAddress": "297-14, KARUPPANNAN STREET, Thumpichampatti", "contactNumber": "9843696987, 9629277665", "enrollmentDate": "25/04/26"},
+  {"studentName": "M. ASHWIN", "sportsSelected": "Archery", "dateOfBirth": "02.03.2017", "gender": "MALE", "parentName": "Mahesh kumar. M", "permanentAddress": "8m/10, Burma saw mill OPP, Dharapuram road oddanchatram", "contactNumber": "9789456641", "enrollmentDate": "11.04.26"},
+  {"studentName": "Jaipranav. D.V", "sportsSelected": "Skating, Archery", "dateOfBirth": "10/08/2019", "gender": "Male", "parentName": "B.R. VINITHA, DINESH KUMAR T", "permanentAddress": "1A1B APP NAGAR, OTTANCHATRAM.", "contactNumber": "9008346804", "enrollmentDate": null},
+  {"studentName": "Saivith. R", "sportsSelected": "Silambam", "dateOfBirth": "15-1-17", "gender": "F", "parentName": "Ramkumar", "permanentAddress": "Nagaram patti", "contactNumber": "9944880876", "enrollmentDate": "7/5/26"},
+  {"studentName": "R. SAI YUGAN", "sportsSelected": "Skating", "dateOfBirth": "03/10/2020", "gender": "M", "parentName": "T. RAMAMOORTHY", "permanentAddress": "A.P.B NAGAR", "contactNumber": "9715431161", "enrollmentDate": null},
+  {"studentName": "Dhakshan. K", "sportsSelected": "Silambam", "dateOfBirth": "08-04-2020", "gender": "M", "parentName": "Hema", "permanentAddress": "Nagaram patti", "contactNumber": "9944880876", "enrollmentDate": "7/5/26"},
+  {"studentName": "M. PARSHITH BALAJI", "sportsSelected": "Chess", "dateOfBirth": "6.8.2016", "gender": "Male", "parentName": "G. Muthupandi, G. Sivaranjani", "permanentAddress": "477E-18-1, Aruna theater backside, Nallakovundan nagar", "contactNumber": "8903190936", "enrollmentDate": "2.5.2026"},
+  {"studentName": "K. YADHURAJ", "sportsSelected": "Chess", "dateOfBirth": "28/4/2013", "gender": "M", "parentName": "C. KANAGARAJAN", "permanentAddress": "Thangachiyamma patti", "contactNumber": "9566003441", "enrollmentDate": "2-5-26"},
+  {"studentName": "M. THARAVANANTH", "sportsSelected": "General", "dateOfBirth": "17.2.2017", "gender": "M", "parentName": "P. THARAVANANTH", "permanentAddress": "odc.", "contactNumber": "9965848540", "enrollmentDate": "3-5-26"},
+  {"studentName": "R. Cithesh", "sportsSelected": "Silambam", "dateOfBirth": "8/10/14", "gender": "M", "parentName": "Ravi", "permanentAddress": "Bank of India", "contactNumber": "7904550189/9789216621", "enrollmentDate": "1/5/2026"},
+  {"studentName": "K. YASHRAS", "sportsSelected": "Chess", "dateOfBirth": "6/7/2016", "gender": "M", "parentName": "C. KANAGARAJAN", "permanentAddress": "odc.", "contactNumber": "9566003441", "enrollmentDate": "2-5-26"},
+  {"studentName": "P. Jitesh kiruthik", "sportsSelected": "Skating", "dateOfBirth": "15.09.2013", "gender": "M", "parentName": "K. Parthiban", "permanentAddress": "255-C-1-J/q, Madhu Asmi Nivas, By pass Road, Oddanchatram", "contactNumber": "95666 59124", "enrollmentDate": "30.4.2026"},
+  {"studentName": "SKANDA RAAYAN", "sportsSelected": "Skating", "dateOfBirth": "18-09-2022", "gender": "MALE", "parentName": "MANJUNATH", "permanentAddress": "ODDANCHATRAM", "contactNumber": "9360801177", "enrollmentDate": "01/05/2026"},
+  {"studentName": "YUGANILAN S", "sportsSelected": "Skating", "dateOfBirth": "7.4.22", "gender": "male", "parentName": "Selvaraj", "permanentAddress": "Teacher's colony backside, K. Atruicombai", "contactNumber": "9442882392, 9488242618", "enrollmentDate": "1.5.26"},
+  {"studentName": "T. MITHULA", "sportsSelected": "Silambam", "dateOfBirth": "28.08.2019", "gender": "FEMALE", "parentName": "R. JAGATHEESH, J. SINDU", "permanentAddress": "5/532, R.S. NAGAR, BUDS SCHOOL (BACKSIDE)", "contactNumber": "9500398125", "enrollmentDate": "1.5.2026"},
+  {"studentName": "D. VENBA", "sportsSelected": "Silambam", "dateOfBirth": "17.04.2021", "gender": "Female", "parentName": "T. DHAMODARAN, J. HEMALATHA", "permanentAddress": "28/1, PALANI GOUNDEN PUDHUR, ODDANCHATRAM", "contactNumber": "7502249871", "enrollmentDate": "1.05.2026"},
+  {"studentName": "AGASTHI V.U", "sportsSelected": "Shuttle", "dateOfBirth": "17.03.2020", "gender": "Female", "parentName": "Vijaya kumar, Uma maheshwari", "permanentAddress": "13B, GG Nagar, Near Akshaya Play School, Dharapuram road, odc.", "contactNumber": "94443400330", "enrollmentDate": null},
+  {"studentName": "AADHYAA. H", "sportsSelected": "Archery", "dateOfBirth": "05-01-2014", "gender": "Female", "parentName": "L. Rahini", "permanentAddress": "310, Dharapuram Road, odc", "contactNumber": "99947903292 / 9443040233", "enrollmentDate": "1-5-2026"},
+  {"studentName": "ARDHANA. H", "sportsSelected": "Archery", "dateOfBirth": "10-8-2015", "gender": "Female", "parentName": "L. Rahini", "permanentAddress": "310, Dharapuram Road, odc", "contactNumber": "99947903292 / 9443040233", "enrollmentDate": "1-5-2026"},
+  {"studentName": "Vaishnavi", "sportsSelected": "Skating", "dateOfBirth": "12.10.2017", "gender": "Female", "parentName": "Jothimurugan, Jeyanandhini", "permanentAddress": "2/59, Kaderiyammapatti", "contactNumber": "9789387887, 7667103148", "enrollmentDate": "29/4/2026"},
+  {"studentName": "Pranith. A", "sportsSelected": "Skating", "dateOfBirth": null, "gender": "M", "parentName": "Ayyappan", "permanentAddress": null, "contactNumber": "9894620021", "enrollmentDate": "28-4-2026"},
+  {"studentName": "KAREN PRISCILLA", "sportsSelected": "Skating", "dateOfBirth": "08.07.2019", "gender": "Female", "parentName": "PONRAJ. D", "permanentAddress": "2/200, PERIYAKARATUPATTI, ODC, DINDIGUL", "contactNumber": "9629310438, 9677612059", "enrollmentDate": null},
+  {"studentName": "R. Nikirthan", "sportsSelected": "Shuttle", "dateOfBirth": "15.5.2014", "gender": "M", "parentName": "P. Raja", "permanentAddress": "Aar", "contactNumber": "7904589665", "enrollmentDate": null},
+  {"studentName": "DARSHA. V", "sportsSelected": "Skating", "dateOfBirth": "26/6/2017", "gender": "F", "parentName": "VADIVEL / INEYAA", "permanentAddress": "Surya Garden, oddanchatram", "contactNumber": "8508745468", "enrollmentDate": "27/4/2026"},
+  {"studentName": "S. VARUN ADITYA", "sportsSelected": "Archery", "dateOfBirth": "08/10/2020", "gender": "M", "parentName": "P. Soundra Pandian", "permanentAddress": "Naganam Patti, oddanchatram", "contactNumber": "9940944323", "enrollmentDate": null},
+  {"studentName": "DHEIKSHA. V", "sportsSelected": "Shuttle", "dateOfBirth": "23-06-2012", "gender": "F", "parentName": "VADIVEL", "permanentAddress": "Surya Gardens, oddanchatram", "contactNumber": "8508745468", "enrollmentDate": "27/4/2026"},
+  {"studentName": "Dhanvand Krishna", "sportsSelected": "Archery", "dateOfBirth": "21.07.21", "gender": "MALE", "parentName": "DHIVYA", "permanentAddress": "KOVIL THOTTAM, VATKAPALAM, VIRUPATCHI", "contactNumber": "6381459103", "enrollmentDate": "27.04.2026"},
+  {"studentName": "C.V. ARNAV", "sportsSelected": "Skating", "dateOfBirth": "23/03/2019", "gender": "M", "parentName": "Sankar. M", "permanentAddress": null, "contactNumber": "9487538180, 9994477038", "enrollmentDate": "25/4/26"},
+  {"studentName": "K.A. SANTHOSH AYYANAR", "sportsSelected": "Silambam", "dateOfBirth": "18/12/2020", "gender": "M", "parentName": "ARUN KUMAR", "permanentAddress": "216/ APP NAGAR, Oddanchatram", "contactNumber": "8825504284 / 8098532184", "enrollmentDate": null},
+  {"studentName": "M. KUNGUMA DHEESHITHAN", "sportsSelected": "Skating", "dateOfBirth": "13-07-2021", "gender": "Male", "parentName": "S. MANIKANDAN", "permanentAddress": "97/14, NEW KOOTAI MEEDU ST, DHARAPURAM", "contactNumber": "9659642154, 7010970108", "enrollmentDate": "20/04/2026"},
+  {"studentName": "R. SANJITH VARMA", "sportsSelected": "Shuttle", "dateOfBirth": "03/07/2014", "gender": "Male", "parentName": "Rajavarma, Saranya Rajavarma", "permanentAddress": "39/B, A.P.P Nagar, opp veterinary hospital, oddanchatram", "contactNumber": "9942423443", "enrollmentDate": "20/4/26"},
+  {"studentName": "Pramoy Sastha", "sportsSelected": "Archery, Skating", "dateOfBirth": "18-Oct-2017", "gender": "Male", "parentName": "MANIKANDAN", "permanentAddress": null, "contactNumber": "9952156312, 9487762679", "enrollmentDate": "21-4-26"},
+  {"studentName": "P. SRI NAGA SOUNDRAVALLI", "sportsSelected": "General", "dateOfBirth": "01.04.2016", "gender": "Female", "parentName": "R. PONRAJ (Father)", "permanentAddress": "29 A1 KARUPPIMADAM, SRIRAMAPURAM", "contactNumber": "6382879184", "enrollmentDate": "17/04/2026"},
+  {"studentName": "N. Sanjeev", "sportsSelected": "Skating", "dateOfBirth": "15.3.2019", "gender": "M", "parentName": "N. Shanthi", "permanentAddress": "3/4, kuttiyagunda puthur, I. Vattipatti, ottanchantharam.", "contactNumber": "8870277093", "enrollmentDate": "18.4.2026"},
+  {"studentName": "R. RASHMITHA VARMA", "sportsSelected": "Archery, Skating, Silambam", "dateOfBirth": "02/04/2020", "gender": "Female", "parentName": "Rajavarma. V, Saranya Rajavarma. K", "permanentAddress": "39-B, APP Nagar, opp veterinary hospital, oddanchatram", "contactNumber": "9942423443", "enrollmentDate": "20/4/26"},
+  {"studentName": "ASRITH PANDIAN", "sportsSelected": "Skating", "dateOfBirth": "28-05-2022", "gender": "Male", "parentName": "Radhakrishnan", "permanentAddress": "Nalla Goundan Nagar, Oddanchatram", "contactNumber": "9443929180", "enrollmentDate": "18/4/2026"},
+  {"studentName": "S.P. RIYAN", "sportsSelected": "Skating", "dateOfBirth": "03.12.2020", "gender": "Male", "parentName": "SARAN, PRIYA", "permanentAddress": "The Ivy Den, Hope College", "contactNumber": "9709709956", "enrollmentDate": "18.04.26"},
+  {"studentName": "K. VIKRANTH", "sportsSelected": "Skating, Archery", "dateOfBirth": "10.05.2021", "gender": "MALE", "parentName": "M. KARTHIGAI PRIYA", "permanentAddress": "423C, ASM PETTAI, ODDANCHATRAM", "contactNumber": "7904687525, 7994823579", "enrollmentDate": "1.05.2026"},
+  {"studentName": "M. Vaishnavi", "sportsSelected": "Shuttle", "dateOfBirth": "14-12-2016", "gender": "F", "parentName": "S. Manoj", "permanentAddress": "186B Aruna theater back side, oddanchatram", "contactNumber": "7373730088", "enrollmentDate": "14-4-26"},
+  {"studentName": "Samrakshan", "sportsSelected": "Archery", "dateOfBirth": null, "gender": "Male", "parentName": "Sathesh & Shoola", "permanentAddress": null, "contactNumber": null, "enrollmentDate": null},
+  {"studentName": "Infaya", "sportsSelected": "Shuttle", "dateOfBirth": null, "gender": "F", "parentName": "Rasmi Mohammed, oddanchatram", "permanentAddress": null, "contactNumber": "9843701784", "enrollmentDate": "15-04-2026"},
+  {"studentName": "VIHAA SABARINATH", "sportsSelected": "Skating", "dateOfBirth": "17-08-2017", "gender": "FEMALE", "parentName": "ABINAYA SABARINATH", "permanentAddress": "2/366B, K.S. THOTTAM, THANGACHIAMMAPATTY, ODC", "contactNumber": "9042299090", "enrollmentDate": "12/4/26"},
+  {"studentName": "G. Mahathi Pandisri", "sportsSelected": "Archery", "dateOfBirth": "29-03-2018", "gender": "F", "parentName": "T. Ganesh Babu", "permanentAddress": "B-19, Kurinji Nagar, oddanchatram", "contactNumber": "9566672112", "enrollmentDate": "11-4-26"},
+  {"studentName": "P. SABARIRAJ", "sportsSelected": "Shuttle", "dateOfBirth": "27/4/2011", "gender": "Male", "parentName": "R. Pasupathi", "permanentAddress": "254, Varthanagar, Thumichampatti, oddanchatram-624619", "contactNumber": "9787035760, 9786138285", "enrollmentDate": null},
+  {"studentName": "INBHA AATHIRAN. S", "sportsSelected": "Skating", "dateOfBirth": "04-July-2022", "gender": "Male", "parentName": "Sivasamy. K, Sonia. S", "permanentAddress": "Maruti nagar, Thummachapatty odc.", "contactNumber": "9036659597, 9380596982", "enrollmentDate": null},
+  {"studentName": "Jadon Paul", "sportsSelected": "Skating", "dateOfBirth": "23.02.2022", "gender": "M", "parentName": "M. Prasath", "permanentAddress": "Christian Fellowship hospital (odc)", "contactNumber": "8870340523", "enrollmentDate": "11/4/26"},
+  {"studentName": "LITHISH ADHAV", "sportsSelected": "Skating", "dateOfBirth": "28-08-2021", "gender": "MALE", "parentName": "ABINAYA SABARINATH", "permanentAddress": "2/366B, K.S. THOTTAM, THANGACHIAMMAPATTY, ODC", "contactNumber": "9042299090", "enrollmentDate": "11/04/2026"},
+  {"studentName": "P. AADHIRA", "sportsSelected": "General", "dateOfBirth": "29/04/2022", "gender": "Female", "parentName": "Priyanka", "permanentAddress": "2/498 c, Sengattu street, Thangachiammapatti", "contactNumber": "9566497802", "enrollmentDate": null},
+  {"studentName": "J. CHAANAKYA GNANA PRAKASH", "sportsSelected": "Skating", "dateOfBirth": "24.7.2019", "gender": "Male", "parentName": "T. Jothiraj", "permanentAddress": "Kasthuri Nagar (odc)", "contactNumber": "6369188137", "enrollmentDate": "13.06.25"}
+]

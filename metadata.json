@@ -1,0 +1,6 @@
+{
+  "name": "Vendhan Sports Academy",
+  "description": "Complete multi-sport student sports academy management platform featuring role-based dashboards for Admin, Head Coach, Coaches, and Students with attendance tracking, fee management, coach salaries, and public CMS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
