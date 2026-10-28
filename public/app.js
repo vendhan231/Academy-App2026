@@ -2526,6 +2526,8 @@ const headCoach = {
     document.getElementById('hc-student-paid-fee').value = '10000';
     document.getElementById('hc-student-kit-total').value = '4000';
     document.getElementById('hc-student-kit-paid').value = '2000';
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('hc-student-enrollment-date').value = today;
     ui.openModal('modal-add-student-hc');
   },
 
@@ -2539,6 +2541,8 @@ const headCoach = {
       const sport = document.getElementById('hc-student-sport').value;
       const parentName = document.getElementById('hc-student-parent').value.trim();
       const address = document.getElementById('hc-student-address').value.trim();
+      const enrollmentDate = document.getElementById('hc-student-enrollment-date').value || null;
+      const bio = document.getElementById('hc-student-bio').value.trim();
 
       const totalFee = Number(document.getElementById('hc-student-total-fee').value || 0);
       const paidFee = Number(document.getElementById('hc-student-paid-fee').value || 0);
@@ -2553,6 +2557,8 @@ const headCoach = {
         phone,
         parentName,
         address,
+        enrollmentDate,
+        bio,
         fees: {
           total: totalFee,
           paid: paidFee,
