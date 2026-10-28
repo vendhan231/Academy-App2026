@@ -2541,8 +2541,16 @@ const headCoach = {
       const sport = document.getElementById('hc-student-sport').value;
       const parentName = document.getElementById('hc-student-parent').value.trim();
       const address = document.getElementById('hc-student-address').value.trim();
+      const dateOfBirth = document.getElementById('hc-student-dob').value || null;
+      const gender = document.getElementById('hc-student-gender').value;
+      const email = document.getElementById('hc-student-email').value.trim();
+      const status = document.getElementById('hc-student-status').value;
+      const kitType = document.getElementById('hc-student-kit-type').value;
+      const assignedCoach = document.getElementById('hc-student-coach').value.trim();
       const enrollmentDate = document.getElementById('hc-student-enrollment-date').value || null;
       const bio = document.getElementById('hc-student-bio').value.trim();
+      const paymentDate = document.getElementById('hc-student-payment-date').value || null;
+      const paymentMode = document.getElementById('hc-student-payment-mode').value;
 
       const totalFee = Number(document.getElementById('hc-student-total-fee').value || 0);
       const paidFee = Number(document.getElementById('hc-student-paid-fee').value || 0);
@@ -2555,19 +2563,29 @@ const headCoach = {
         name,
         sport,
         phone,
+        email,
         parentName,
         address,
+        dateOfBirth,
+        gender,
+        status,
+        kitType,
+        assignedCoach,
         enrollmentDate,
         bio,
         fees: {
           total: totalFee,
           paid: paidFee,
-          due: Math.max(0, totalFee - paidFee)
+          due: Math.max(0, totalFee - paidFee),
+          paymentMethod: paymentMode,
+          paymentDate: paymentDate || ''
         },
         kitFees: {
           total: kitTotal,
           paid: kitPaid,
-          due: Math.max(0, kitTotal - kitPaid)
+          due: Math.max(0, kitTotal - kitPaid),
+          paymentMethod: paymentMode,
+          paymentDate: paymentDate || ''
         }
       };
 

@@ -572,7 +572,7 @@ app.get('/api/users', authenticate, authorize(['admin', 'head_coach', 'coach']),
 // 4.1 POST /api/students: [Admin, Head Coach] Register a new regular active student
 app.post('/api/students', authenticate, authorize(['admin', 'head_coach']), async (req, res) => {
   try {
-    const { username, password, name, sport, phone, parentName, address, fees, kitFees, enrollmentDate, bio } = req.body;
+    const { username, password, name, sport, phone, email, parentName, address, dateOfBirth, gender, status, kitType, assignedCoach, fees, kitFees, enrollmentDate, bio } = req.body;
 
     if (!username || !name) {
       return res.status(400).json({
@@ -604,8 +604,14 @@ app.post('/api/students', authenticate, authorize(['admin', 'head_coach']), asyn
       name: name.trim(),
       sport: sport || 'Physical Fitness',
       phone: phone || '',
+      email: email || '',
       parentName: parentName || '',
       address: address || '',
+      dateOfBirth: dateOfBirth || null,
+      gender: gender || '',
+      status: status || 'Active',
+      kitType: kitType || 'No Kit',
+      assignedCoach: assignedCoach || '',
       enrollmentDate: enrollmentDate || null,
       bio: bio || '',
       fees: {

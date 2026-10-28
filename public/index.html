@@ -471,6 +471,9 @@
           <label class="block text-xs font-semibold text-slate-600 mb-1">Payment Method</label>
           <select id="edit-fee-payment-method" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 text-sm font-semibold focus:outline-none focus:border-brand-500">
             <option value="Cash">Cash</option>
+            <option value="UPI">UPI</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Other">Other</option>
             <option value="Online">Online Pay</option>
           </select>
         </div>
@@ -584,7 +587,63 @@
           </div>
         </div>
 
-        <!-- Student Dual Fees -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Date of Birth</label>
+            <input type="date" id="hc-student-dob" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Gender</label>
+            <select id="hc-student-gender" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500">
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Email Address</label>
+            <input type="email" id="hc-student-email" placeholder="student@example.com" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Student Status</label>
+            <select id="hc-student-status" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Kit Type</label>
+            <select id="hc-student-kit-type" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500">
+              <option value="No Kit">No Kit</option>
+              <option value="Baby Kit">Baby Kit</option>
+              <option value="Big Kit">Big Kit</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Assign Coach</label>
+            <input type="text" id="hc-student-coach" placeholder="Coach name (optional)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Payment Date</label>
+            <input type="date" id="hc-student-payment-date" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Payment Mode</label>
+            <select id="hc-student-payment-mode" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-brand-500">
+              <option value="Cash">Cash</option>
+              <option value="UPI">UPI</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
         <div class="space-y-3 pt-2">
           <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
             <div class="text-xs font-bold text-brand-700 uppercase flex items-center justify-between">

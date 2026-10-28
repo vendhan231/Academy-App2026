@@ -66,6 +66,10 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  email: { type: String, default: '' },
+  status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
+  kitType: { type: String, default: 'No Kit' },
+  assignedCoach: { type: String, default: '' },
   // Tuition / Academy Fees
   fees: {
     total: { type: Number, default: 0 },
@@ -266,6 +270,10 @@ class UserModelWrapper {
       enrollmentDate: userData.enrollmentDate || null,
       bio: userData.bio || '',
       profilePhoto: userData.profilePhoto || '',
+     email: userData.email || '',
+     status: userData.status || 'Active',
+     kitType: userData.kitType || 'No Kit',
+     assignedCoach: userData.assignedCoach || '',
       fees: {
         total: totalFee,
         paid: paidFee,
