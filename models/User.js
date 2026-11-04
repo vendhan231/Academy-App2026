@@ -34,6 +34,14 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  contactNumbers: {
+    type: String,
+    default: ''
+  },
+  contactNumber: {
+    type: String,
+    default: ''
+  },
   parentName: {
     type: String,
     default: ''
@@ -262,6 +270,8 @@ class UserModelWrapper {
       name: userData.name.trim(),
       sport: userData.sport || 'Physical Fitness',
       phone: userData.phone || '',
+       contactNumbers: userData.contactNumbers || userData.contactNumber || '',
+       contactNumber: userData.contactNumber || userData.contactNumbers || '',
       parentName: userData.parentName || '',
       address: userData.address || '',
       dateOfBirth: userData.dateOfBirth || null,
@@ -331,6 +341,8 @@ class UserModelWrapper {
         name: doc.name,
         sport: doc.sport,
         phone: doc.phone,
+         contactNumbers: doc.contactNumbers,
+         contactNumber: doc.contactNumber,
         parentName: doc.parentName,
         address: doc.address,
         dateOfBirth: doc.dateOfBirth,

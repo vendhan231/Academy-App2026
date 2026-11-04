@@ -474,7 +474,7 @@ app.post('/api/academy-logo', authenticate, authorize(['admin']), async (req, re
 // 3. POST /api/users: [Admin] Create new student/coach with fee and kit fee structures
 app.post('/api/users', authenticate, authorize(['admin']), async (req, res) => {
   try {
-    const { username, password, role, name, sport, phone, email, parentName, address, dateOfBirth, gender, sportLevel, status, kitType, assignedCoach, enrollmentDate, bio, fees, kitFees, coachSalary } = req.body;
+    const { username, password, role, name, sport, phone, contactNumbers, contactNumber, email, parentName, address, dateOfBirth, gender, sportLevel, status, kitType, assignedCoach, enrollmentDate, bio, fees, kitFees, coachSalary } = req.body;
 
     if (!username || !role || !name) {
       return res.status(400).json({
@@ -511,6 +511,12 @@ app.post('/api/users', authenticate, authorize(['admin']), async (req, res) => {
       name: name.trim(),
       sport: sport || 'Physical Fitness',
       phone: phone || '',
+       contactNumbers: contactNumbers || contactNumber || '',
+       contactNumber: contactNumber || contactNumbers || '',
+       parentName: parentName || '',
+       address: address || '',
+       dateOfBirth: dateOfBirth || null,
+       gender: gender || '',
       fees: {
         total: totalFee,
         paid: paidFee,
@@ -572,7 +578,7 @@ app.get('/api/users', authenticate, authorize(['admin', 'head_coach', 'coach']),
 // 4.1 POST /api/students: [Admin, Head Coach] Register a new regular active student
 app.post('/api/students', authenticate, authorize(['admin', 'head_coach']), async (req, res) => {
   try {
-    const { username, password, name, sport, phone, email, parentName, address, dateOfBirth, gender, sportLevel, status, kitType, assignedCoach, fees, kitFees, enrollmentDate, bio } = req.body;
+    const { username, password, name, sport, phone, contactNumbers, contactNumber, email, parentName, address, dateOfBirth, gender, sportLevel, status, kitType, assignedCoach, fees, kitFees, enrollmentDate, bio } = req.body;
 
     if (!username || !name) {
       return res.status(400).json({
@@ -604,6 +610,8 @@ app.post('/api/students', authenticate, authorize(['admin', 'head_coach']), asyn
       name: name.trim(),
       sport: sport || 'Physical Fitness',
       phone: phone || '',
+       contactNumbers: contactNumbers || contactNumber || '',
+       contactNumber: contactNumber || contactNumbers || '',
       email: email || '',
       parentName: parentName || '',
       address: address || '',
@@ -677,7 +685,7 @@ app.put('/api/students/:id', authenticate, authorize(['admin', 'head_coach']), a
     }
 
     const {
-      name, sport, phone, email, parentName, address, dateOfBirth, gender,
+      name, sport, phone, contactNumbers, contactNumber, email, parentName, address, dateOfBirth, gender,
       sportLevel, enrollmentDate, bio, profilePhoto, status, kitType, assignedCoach, fees, kitFees
     } = req.body;
 
@@ -685,6 +693,8 @@ app.put('/api/students/:id', authenticate, authorize(['admin', 'head_coach']), a
     if (name !== undefined) update.name = name;
     if (sport !== undefined) update.sport = sport;
     if (phone !== undefined) update.phone = phone;
+     if (contactNumbers !== undefined) update.contactNumbers = contactNumbers;
+     if (contactNumber !== undefined) update.contactNumber = contactNumber;
     if (email !== undefined) update.email = email;
     if (parentName !== undefined) update.parentName = parentName;
     if (address !== undefined) update.address = address;

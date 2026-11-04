@@ -1071,6 +1071,7 @@ const router = {
   },
 
   async renderAdminArchiveTab(container) {
+    if (!state.archiveView) state.archiveView = 'table';
     container.innerHTML = `
       <div class="space-y-6">
         <!-- Search and Action Bar -->
@@ -1082,10 +1083,17 @@ const router = {
                 <i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading...
               </span>
             </div>
-        
           </div>
           
           <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1 p-1 rounded-xl bg-slate-100 border border-slate-200">
+              <button onclick="window.admin.setArchiveView('table')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${state.archiveView === 'table' ? 'bg-white text-brand-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'}">
+                <i class="fa-solid fa-table mr-1"></i> Table View
+              </button>
+              <button onclick="window.admin.setArchiveView('card')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${state.archiveView === 'card' ? 'bg-white text-brand-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'}">
+                <i class="fa-solid fa-grip-vertical mr-1"></i> Card View
+              </button>
+            </div>
             <button onclick="window.admin.openAddArchiveModal()" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md shadow-brand-600/30 flex items-center gap-2 transition cursor-pointer">
               <i class="fa-solid fa-plus"></i> Add Archive Record
             </button>
@@ -1100,7 +1108,7 @@ const router = {
           <input
             type="text"
             id="archive-search-input"
-            placeholder="Real-time search by student name, contact number, sport, parent, or address..."
+            placeholder="Real-time search by student name, student ID, sport, parent/guardian, contact number, or residential address..."
             oninput="window.admin.onArchiveSearchInput(event)"
             class="w-full pl-10 pr-16 py-3 rounded-2xl bg-white border border-slate-200 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-xs"
           />
@@ -1113,29 +1121,10 @@ const router = {
           </button>
         </div>
 
-        <!-- Archive Data Table -->
-        <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead class="bg-slate-50 text-slate-700 border-b border-slate-200">
-                <tr>
-                  <th class="py-3.5 px-4 font-bold uppercase">Student Name</th>
-                  <th class="py-3.5 px-4 font-bold uppercase">Sport Selected</th>
-                  <th class="py-3.5 px-4 font-bold uppercase">DOB & Gender</th>
-                  <th class="py-3.5 px-4 font-bold uppercase">Parent / Guardian</th>
-                  <th class="py-3.5 px-4 font-bold uppercase">Permanent Address</th>
-                  <th class="py-3.5 px-4 font-bold uppercase">Contact Number</th>
-                  <th class="py-3.5 px-4 font-bold uppercase">Enrollment Date</th>
-                </tr>
-              </thead>
-              <tbody id="archive-table-body" class="divide-y divide-slate-100">
-                <tr>
-                  <td colspan="7" class="py-12 text-center text-slate-400">
-                    <i class="fa-solid fa-spinner fa-spin text-xl"></i> Loading archive records...
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+        <!-- Archive Data Container -->
+        <div id="archive-data-container">
+          <div class="py-12 text-center text-slate-400">
+            <i class="fa-solid fa-spinner fa-spin text-xl"></i> Loading archive records...
           </div>
         </div>
       </div>
@@ -2584,6 +2573,8 @@ const headCoach = {
         name,
         sport,
         phone,
+         contactNumbers: phone,
+         contactNumber: phone,
         email,
         parentName,
         address,
@@ -2744,6 +2735,11 @@ const admin = {
       const password = document.getElementById('new-user-password').value;
       const name = document.getElementById('new-user-name').value;
       const phone = document.getElementById('new-user-phone').value;
+      const dob = document.getElementById('new-user-dob') ? document.getElementById('new-user-dob').value : '';
+      const gender = document.getElementById('new-user-gender') ? document.getElementById('new-user-gender').value : '';
+      const parentName = document.getElementById('new-user-parent') ? document.getElementById('new-user-parent').value : '';
+      const contactNumbers = document.getElementById('new-user-contact-numbers') ? document.getElementById('new-user-contact-numbers').value : '';
+      const address = document.getElementById('new-user-address') ? document.getElementById('new-user-address').value : '';
       const sport = document.getElementById('new-user-sport').value;
 
       const body = {
@@ -2752,6 +2748,12 @@ const admin = {
         password,
         name,
         phone,
+        contactNumbers,
+        contactNumber: contactNumbers,
+        parentName,
+        address,
+        dateOfBirth: dob || null,
+        gender,
         sport
       };
 
@@ -2902,6 +2904,76 @@ const admin = {
 
   archiveSearchTimeout: null,
 
+  setArchiveView(view) {
+    state.archiveView = view;
+    const container = document.getElementById('admin-tab-content');
+    if (container && state.currentTab === 'archive') {
+      this.renderAdminArchiveTab(container);
+    }
+  },
+
+  openArchiveDetails(record) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-sm';
+    modal.onclick = function (e) {
+      if (e.target === modal) modal.remove();
+    };
+    const archivedDate = record.archivedAt ? new Date(record.archivedAt).toLocaleDateString('en-IN') : '—';
+    modal.innerHTML = `
+      <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto relative shadow-2xl">
+        <button class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900 transition z-10" onclick="this.closest('.fixed').remove()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="p-6 sm:p-8 border-b border-slate-200">
+          <div class="flex items-center gap-4">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-brand-100 to-brand-200 flex items-center justify-center border-4 border-white shadow-lg">
+              <i class="fa-solid fa-user-graduate text-2xl text-brand-600"></i>
+            </div>
+            <div>
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 font-display">${record.studentName || 'N/A'}</h2>
+              <p class="text-sm text-slate-500 font-semibold">Student Historical Archive Record</p>
+            </div>
+          </div>
+        </div>
+        <div class="p-6 sm:p-8 space-y-6">
+          <section>
+            <h3 class="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2"><i class="fa-solid fa-id-card text-brand-600"></i> PERSONAL DETAILS</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200"><p class="text-xs text-slate-500 font-semibold mb-1">Student Name</p><p class="text-sm text-slate-900 font-bold">${record.studentName || '—'}</p></div>
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200"><p class="text-xs text-slate-500 font-semibold mb-1">Student ID</p><p class="text-sm text-slate-900 font-mono">${record._id || record.id || '—'}</p></div>
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200"><p class="text-xs text-slate-500 font-semibold mb-1">Date of Birth</p><p class="text-sm text-slate-900 font-bold">${record.dateOfBirth || '—'}</p></div>
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200"><p class="text-xs text-slate-500 font-semibold mb-1">Gender</p><p class="text-sm text-slate-900 font-bold">${record.gender || '—'}</p></div>
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2"><p class="text-xs text-slate-500 font-semibold mb-1">Sport Selected</p><p class="text-sm text-slate-900 font-bold">${record.sportsSelected || 'General'}</p></div>
+            </div>
+          </section>
+          <section>
+            <h3 class="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2"><i class="fa-solid fa-users text-brand-600"></i> PARENT / GUARDIAN DETAILS</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2"><p class="text-xs text-slate-500 font-semibold mb-1">Parent / Guardian Name</p><p class="text-sm text-slate-900 font-bold">${record.parentName || '—'}</p></div>
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2"><p class="text-xs text-slate-500 font-semibold mb-1">Contact Numbers</p><p class="text-sm text-slate-900 font-mono whitespace-pre-wrap">${record.contactNumber || '—'}</p></div>
+            </div>
+          </section>
+          <section>
+            <h3 class="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2"><i class="fa-solid fa-location-dot text-brand-600"></i> RESIDENTIAL DETAILS</h3>
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200"><p class="text-xs text-slate-500 font-semibold mb-1">Complete Residential Address</p><p class="text-sm text-slate-900 leading-relaxed whitespace-pre-wrap">${record.permanentAddress || '—'}</p></div>
+          </section>
+          <section>
+            <h3 class="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2"><i class="fa-solid fa-school text-brand-600"></i> ACADEMY DETAILS</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200"><p class="text-xs text-slate-500 font-semibold mb-1">Joining / Enrollment Date</p><p class="text-sm text-slate-900 font-bold">${record.enrollmentDate || '—'}</p></div>
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200"><p class="text-xs text-slate-500 font-semibold mb-1">Archived Date</p><p class="text-sm text-slate-900 font-bold">${archivedDate}</p></div>
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2"><p class="text-xs text-slate-500 font-semibold mb-1">Previous Coach (if available)</p><p class="text-sm text-slate-900 font-bold">${record.previousCoach || record.coach || '—'}</p></div>
+            </div>
+          </section>
+        </div>
+        <div class="p-6 border-t border-slate-200 flex justify-end">
+          <button onclick="this.closest('.fixed').remove()" class="px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm">Close</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  },
+
   onArchiveSearchInput(event) {
     clearTimeout(this.archiveSearchTimeout);
     const term = event.target.value;
@@ -2911,7 +2983,7 @@ const admin = {
   },
 
   async loadArchiveRecords(query = '') {
-    const tbody = document.getElementById('archive-table-body');
+    const container = document.getElementById('archive-data-container');
     const countBadge = document.getElementById('archive-count-badge');
     try {
       const url = query && query.trim() !== ''
@@ -2924,47 +2996,94 @@ const admin = {
         countBadge.textContent = `${records.length} Archived Records`;
       }
 
-      if (!tbody) return;
+      if (!container) return;
 
       if (records.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="7" class="py-12 text-center text-slate-400">
-              <i class="fa-solid fa-box-open text-3xl text-slate-300 mb-2"></i>
-              <p class="font-medium text-slate-600">No archived records matching "${query}".</p>
-              <p class="text-[11px] text-slate-400 mt-1">Try another search term or clear the filter.</p>
-            </td>
-          </tr>
+        container.innerHTML = `
+          <div class="p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
+            <i class="fa-solid fa-box-open text-3xl text-slate-300 mb-2"></i>
+            <p class="font-medium text-slate-600">No archived records matching "${query}".</p>
+            <p class="text-[11px] text-slate-400 mt-1">Try another search term or clear the filter.</p>
+          </div>
         `;
         return;
       }
 
-      tbody.innerHTML = records.map((r) => {
-        const sportBadge = admin.getArchiveSportBadge(r.sportsSelected);
-        return `
-          <tr class="hover:bg-slate-50 transition">
-            <td class="py-3.5 px-4 font-bold text-slate-900">${r.studentName}</td>
-            <td class="py-3.5 px-4">
-              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${sportBadge}">
-                ${r.sportsSelected || 'General'}
-              </span>
-            </td>
-            <td class="py-3.5 px-4 text-slate-600">
-              <div class="font-mono text-slate-800">${r.dateOfBirth || '—'}</div>
-              <div class="text-[10px] text-slate-500 uppercase font-bold">${r.gender || '—'}</div>
-            </td>
-            <td class="py-3.5 px-4 text-slate-700 font-medium">${r.parentName || '—'}</td>
-            <td class="py-3.5 px-4 text-slate-600 text-[11px] max-w-[240px] truncate" title="${r.permanentAddress || ''}">
-              ${r.permanentAddress || '—'}
-            </td>
-            <td class="py-3.5 px-4 font-mono text-slate-700 font-semibold">${r.contactNumber || '—'}</td>
-            <td class="py-3.5 px-4 font-mono text-slate-600">${r.enrollmentDate || '—'}</td>
-          </tr>
+      if (state.archiveView === 'card') {
+        container.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${records.map((r) => `
+              <div class="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-brand-300 transition">
+                <div class="flex items-start justify-between mb-3">
+                  <div>
+                    <h4 class="font-bold text-slate-900">${r.studentName || '—'}</h4>
+                    <p class="text-xs text-brand-700 font-semibold">${r.sportsSelected || 'General'}</p>
+                  </div>
+                  <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">${r.gender || '—'}</span>
+                </div>
+                <div class="space-y-2 text-xs text-slate-600">
+                  <div class="flex items-center gap-2"><i class="fa-solid fa-phone text-brand-600 w-4"></i><span class="font-mono">${r.contactNumber || '—'}</span></div>
+                  <div class="flex items-center gap-2"><i class="fa-solid fa-calendar-day text-brand-600 w-4"></i><span>Enrollment: ${r.enrollmentDate || '—'}</span></div>
+                  <div class="flex items-center gap-2"><i class="fa-solid fa-user-tie text-brand-600 w-4"></i><span>Parent: ${r.parentName || '—'}</span></div>
+                </div>
+                <button onclick='window.admin.openArchiveDetails(${JSON.stringify(r).replace(/'/g, "&#39;")})' class="w-full mt-4 px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-eye"></i> View Details
+                </button>
+              </div>
+            `).join('')}
+          </div>
         `;
-      }).join('');
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-700 border-b border-slate-200">
+                <tr>
+                  <th class="py-3.5 px-4 font-bold uppercase">Student Name</th>
+                  <th class="py-3.5 px-4 font-bold uppercase">Sport</th>
+                  <th class="py-3.5 px-4 font-bold uppercase">Date of Birth</th>
+                  <th class="py-3.5 px-4 font-bold uppercase">Gender</th>
+                  <th class="py-3.5 px-4 font-bold uppercase">Parent / Guardian</th>
+                  <th class="py-3.5 px-4 font-bold uppercase">Contact Number</th>
+                  <th class="py-3.5 px-4 font-bold uppercase">Enrollment Date</th>
+                  <th class="py-3.5 px-4 font-bold uppercase">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                ${records.map((r) => {
+                  const sportBadge = admin.getArchiveSportBadge(r.sportsSelected);
+                  return `
+                    <tr class="hover:bg-slate-50 transition">
+                      <td class="py-3.5 px-4 font-bold text-slate-900">${r.studentName || '—'}</td>
+                      <td class="py-3.5 px-4">
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${sportBadge}">
+                          ${r.sportsSelected || 'General'}
+                        </span>
+                      </td>
+                      <td class="py-3.5 px-4 text-slate-700 font-mono">${r.dateOfBirth || '—'}</td>
+                      <td class="py-3.5 px-4 text-slate-700">${r.gender || '—'}</td>
+                      <td class="py-3.5 px-4 text-slate-700">${r.parentName || '—'}</td>
+                      <td class="py-3.5 px-4 font-mono text-slate-700">${r.contactNumber || '—'}</td>
+                      <td class="py-3.5 px-4 font-mono text-slate-700">${r.enrollmentDate || '—'}</td>
+                      <td class="py-3.5 px-4">
+                        <button onclick='window.admin.openArchiveDetails(${JSON.stringify(r).replace(/'/g, "&#39;")})' class="px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold border border-brand-200 transition flex items-center gap-1.5">
+                          <i class="fa-solid fa-eye"></i> View Details
+                        </button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
     } catch (err) {
-      if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-sportsRed-600 font-semibold">${err.message}</td></tr>`;
+      if (container) {
+        container.innerHTML = `<div class="p-6 text-center text-sportsRed-600 font-semibold bg-white rounded-2xl border border-slate-200">${err.message}</div>`;
       }
     }
   },
@@ -3262,7 +3381,7 @@ window.openStudentProfileModal = async function(studentId) {
               </div>
               <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2">
                 <p class="text-xs text-slate-500 font-semibold">Contact Numbers</p>
-                <p class="text-sm text-slate-900 font-medium">${s.phone || 'N/A'}</p>
+                <p class="text-sm text-slate-900 font-medium">${[s.phone, s.contactNumbers || s.contactNumber].filter((v, i, a) => v && a.indexOf(v) === i).join(', ') || 'N/A'}</p>
               </div>
               <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2">
                 <p class="text-xs text-slate-500 font-semibold">Residential Address</p>

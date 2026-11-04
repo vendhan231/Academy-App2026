@@ -1,6 +1,206 @@
 {
   "users": [
     {
+      "_id": "usr_c81b2b60-c2e",
+      "username": "66",
+      "password": "$2b$10$wfSKJ1DZWiit7uU5OD14XOnQBQUpOyfgM/cGC7NfFJzbf9K9Y8y6K",
+      "role": "student",
+      "name": "KumarKrish",
+      "sport": "Football",
+      "phone": "8438018408",
+      "contactNumbers": "8438018408",
+      "contactNumber": "8438018408",
+      "parentName": "Karthick Kumar",
+      "address": "Oddanchatram, TamilNadu",
+      "dateOfBirth": "2017-01-02",
+      "gender": "Male",
+      "sportLevel": "",
+      "enrollmentDate": null,
+      "bio": "",
+      "profilePhoto": "",
+      "email": "",
+      "status": "Active",
+      "kitType": "No Kit",
+      "assignedCoach": "",
+      "fees": {
+        "total": 18000,
+        "paid": 10000,
+        "due": 8000,
+        "paymentMethod": ""
+      },
+      "kitFees": {
+        "total": 4000,
+        "paid": 2000,
+        "due": 2000,
+        "paymentMethod": ""
+      },
+      "coachSalary": {
+        "amount": 0,
+        "status": "Pending"
+      },
+      "createdAt": "2026-11-04T12:08:57.748Z"
+    },
+    {
+      "_id": "usr_6d6b425f-81c",
+      "username": "testnew2",
+      "password": "$2b$10$Je3lm7wCZl/KvRg/sjO1hOL7xHbKt35CSG3XrgZc6OpD9q/0hKIWy",
+      "role": "student",
+      "name": "Test New2",
+      "sport": "Football",
+      "phone": "+91 3333333333",
+      "contactNumbers": "+91 3333333333",
+      "contactNumber": "+91 3333333333",
+      "parentName": "Parent2",
+      "address": "Addr2",
+      "dateOfBirth": "2009-05-05",
+      "gender": "Female",
+      "sportLevel": "Beginner",
+      "enrollmentDate": "2026-11-04T11:59:34.554Z",
+      "bio": "",
+      "profilePhoto": "",
+      "email": "",
+      "status": "Active",
+      "kitType": "No Kit",
+      "assignedCoach": "",
+      "fees": {
+        "total": 0,
+        "paid": 0,
+        "due": 0,
+        "paymentMethod": ""
+      },
+      "kitFees": {
+        "total": 0,
+        "paid": 0,
+        "due": 0,
+        "paymentMethod": ""
+      },
+      "coachSalary": {
+        "amount": 0,
+        "status": "Paid"
+      },
+      "createdAt": "2026-11-04T11:59:34.667Z"
+    },
+    {
+      "_id": "usr_d156b642-d54",
+      "username": "testnew",
+      "password": "$2b$10$7HsEbVJT6arMa1/zmYu51uLu4J28DYqro0HYeWifuoim/tOFb81e.",
+      "role": "student",
+      "name": "Test New",
+      "sport": "Football",
+      "phone": "+91 1111111111",
+      "contactNumbers": "+91 1111111111, +91 2222222222",
+      "contactNumber": "+91 1111111111, +91 2222222222",
+      "parentName": "Test Parent",
+      "address": "Test Address",
+      "dateOfBirth": "2010-01-01",
+      "gender": "Male",
+      "sportLevel": "",
+      "enrollmentDate": null,
+      "bio": "",
+      "profilePhoto": "",
+      "email": "",
+      "status": "Active",
+      "kitType": "No Kit",
+      "assignedCoach": "",
+      "fees": {
+        "total": 18000,
+        "paid": 10000,
+        "due": 8000,
+        "paymentMethod": ""
+      },
+      "kitFees": {
+        "total": 4000,
+        "paid": 2000,
+        "due": 2000,
+        "paymentMethod": ""
+      },
+      "coachSalary": {
+        "amount": 0,
+        "status": "Pending"
+      },
+      "createdAt": "2026-11-04T11:59:21.281Z"
+    },
+    {
+      "_id": "usr_b92ab16a-6a3",
+      "username": "testnew999",
+      "password": "$2b$10$JRMr59pfZvk.HudIeh1lWugnb1uMYPnqQHMzheM0OAO83O8fmAeGy",
+      "role": "student",
+      "name": "Test New",
+      "sport": "Football",
+      "phone": "111",
+      "contactNumbers": "222, 333",
+      "contactNumber": "222, 333",
+      "parentName": "Parent X",
+      "address": "Addr X",
+      "dateOfBirth": "2010-05-05",
+      "gender": "Female",
+      "sportLevel": "",
+      "enrollmentDate": null,
+      "bio": "",
+      "profilePhoto": "",
+      "email": "",
+      "status": "Active",
+      "kitType": "No Kit",
+      "assignedCoach": "",
+      "fees": {
+        "total": 0,
+        "paid": 0,
+        "due": 0,
+        "paymentMethod": ""
+      },
+      "kitFees": {
+        "total": 0,
+        "paid": 0,
+        "due": 0,
+        "paymentMethod": ""
+      },
+      "coachSalary": {
+        "amount": 0,
+        "status": "Pending"
+      },
+      "createdAt": "2026-11-04T11:44:44.462Z"
+    },
+    {
+      "_id": "usr_55bcb587-56c",
+      "username": "testnew1",
+      "password": "$2b$10$TpspInlDS6/5oK3IQDcFy.KBo7QpWW2fCN/uL2w/g/XoQ3VibHSey",
+      "role": "student",
+      "name": "Test New",
+      "sport": "Football",
+      "phone": "111",
+      "contactNumbers": "222, 333",
+      "contactNumber": "222, 333",
+      "parentName": "Parent X",
+      "address": "Addr X",
+      "dateOfBirth": "2010-05-05",
+      "gender": "Female",
+      "sportLevel": "",
+      "enrollmentDate": null,
+      "bio": "",
+      "profilePhoto": "",
+      "email": "",
+      "status": "Active",
+      "kitType": "No Kit",
+      "assignedCoach": "",
+      "fees": {
+        "total": 0,
+        "paid": 0,
+        "due": 0,
+        "paymentMethod": ""
+      },
+      "kitFees": {
+        "total": 0,
+        "paid": 0,
+        "due": 0,
+        "paymentMethod": ""
+      },
+      "coachSalary": {
+        "amount": 0,
+        "status": "Pending"
+      },
+      "createdAt": "2026-11-04T11:34:10.529Z"
+    },
+    {
       "_id": "usr_c73dbb2a-e0b",
       "username": "teststu777",
       "password": "$2b$10$yhv5uT0V3dC6yP1w.Ebjz.p9TA0ThgmKFamIMIsgKBjBA5abuaDyS",
