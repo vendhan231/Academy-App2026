@@ -56,7 +56,7 @@ const UserSchema = new mongoose.Schema({
   },
   enrollmentDate: {
     type: Date,
-    default: null
+    default: Date.now
   },
   bio: {
     type: String,
@@ -333,6 +333,15 @@ class UserModelWrapper {
         phone: doc.phone,
         parentName: doc.parentName,
         address: doc.address,
+        dateOfBirth: doc.dateOfBirth,
+        gender: doc.gender,
+        sportLevel: doc.sportLevel,
+        enrollmentDate: doc.enrollmentDate,
+        bio: doc.bio,
+        email: doc.email,
+        status: doc.status,
+        kitType: doc.kitType,
+        assignedCoach: doc.assignedCoach,
         fees: doc.fees,
         kitFees: doc.kitFees,
         coachSalary: doc.coachSalary

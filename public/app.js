@@ -6,15 +6,15 @@
  * - Admin-Only Logo Upload & Persistence (Server-backed + LocalStore)
  * - Coach Dashboard:
  *   * Interactive 6-Sport Selection Grid & Today's Attendance Marking
- *   * Attendance View as List (Student Attendance Logs with Filters)
+ *   * Attendance View as List (Attendance Logs with Filters)
  *   * Fees View as List (Dual Tuition & Kit Fees Ledger with Fees Icon Trigger)
  * - Head Coach Dashboard:
  *   * 6-Discipline Coaches Supervision & Today's Marking
- *   * Coach Attendance View as List
- *   * Student Attendance View as List
- *   * Academy Fees View as List
+ *   * Attendance View as List
+ *   * Attendance View as List
+ *   * Fees View as List
  * - Admin Dashboard:
- *   * Full User Management, Attendance List, Fees List, Salaries, and CMS with Logo Editor
+ *   * Full Users, Attendance List, Fees List, Salaries, and CMS with Logo Editor
  * - Student Portal:
  *   * Dual Tuition & Kit Fee Tracking with Progress Bars and Attendance Analytics
  */
@@ -167,9 +167,6 @@ const auth = {
         localStorage.setItem('vsa_token', res.token);
         localStorage.setItem('vsa_user', JSON.stringify(res.user));
 
-        if (res.user.role === 'coach' && res.user.sport && res.user.sport !== 'All') {
-          state.selectedSportFilter = res.user.sport;
-        }
 
         ui.closeModal('modal-login');
         ui.toast(`Welcome back, ${res.user.name}! (${res.user.role.toUpperCase()})`, 'success');
@@ -307,7 +304,7 @@ const ui = {
           <span class="flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-brand-600"></i> Admin Portal Preset:</span>
           <span class="font-mono text-[11px] text-slate-500">Superuser</span>
         </div>
-        <p class="text-[11px] text-slate-600 mb-2.5">Full control over users, CMS content, coach salaries, and master logs.</p>
+        
         <div class="p-2.5 rounded-lg bg-white border border-orange-200 shadow-xs text-[11px] text-slate-600">
           Enter your administrator username and password to sign in. Demo credentials are not displayed for security.
         </div>
@@ -340,7 +337,7 @@ const ui = {
           <span class="flex items-center gap-1.5"><i class="fa-solid fa-graduation-cap text-purple-600"></i> Student Athlete Portal:</span>
           <span class="font-mono text-[11px] text-slate-500">Trainee Access</span>
         </div>
-        <p class="text-[11px] text-slate-600 mb-2">Unique student IDs and credentials are dynamically allocated by Admin upon admission.</p>
+        
         <div class="p-2.5 rounded-lg bg-white border border-purple-200 shadow-xs text-[11px] text-slate-600">
           Use the student ID and password allocated by the Admin. Demo credentials are not displayed for security.
         </div>
@@ -451,14 +448,12 @@ const router = {
     if (!container) return;
 
     if (!state.user) {
-      if (navLinks) navLinks.classList.remove('hidden');
       container.innerHTML = `
         <button onclick="window.ui.openLoginModal()" class="px-5 py-2 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-600/30 transition flex items-center gap-2">
           <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In
         </button>
       `;
     } else {
-      if (navLinks) navLinks.classList.add('hidden');
       const roleBadge = {
         admin: 'bg-red-100 text-red-700 border-red-300',
         head_coach: 'bg-blue-100 text-blue-700 border-blue-300',
@@ -467,21 +462,21 @@ const router = {
       }[state.user.role] || 'bg-slate-100 text-slate-700';
 
       const roleLabel = {
-        admin: 'Super Admin',
-        head_coach: 'Head Coach',
-        coach: 'Coach',
-        student: 'Student'
+        admin: 'SUPER ADMIN',
+        head_coach: 'HEAD COACH',
+        coach: 'COACH',
+        student: 'STUDENT'
       }[state.user.role] || state.user.role;
 
       container.innerHTML = `
         <div class="flex items-center gap-3">
           <div class="hidden sm:flex flex-col text-right">
-            <span class="text-sm font-bold text-slate-900 tracking-tight">${state.user.name}</span>
+            <span class="text-sm font-bold text-slate-900 tracking-tight">${state.user.name} [${roleLabel}]</span>
             <span class="text-[11px] font-bold uppercase px-2 py-0.5 rounded-full border self-end mt-0.5 ${roleBadge}">
               ${roleLabel}
             </span>
           </div>
-          <button onclick="window.auth.logout()" title="Sign Out" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 border border-slate-200 transition flex items-center justify-center">
+          <button onclick="window.auth.logout()" title="Sign Out" class="p-2 text-rose-500 hover:bg-rose-50 rounded-full">
             <i class="fa-solid fa-arrow-right-from-bracket"></i>
           </button>
         </div>
@@ -572,7 +567,7 @@ const router = {
                 <i class="fa-solid fa-calendar-days"></i> Training Timetable
               </div>
               <h2 class="text-3xl font-extrabold text-slate-900 font-display mt-1">Weekly Training Schedule</h2>
-              <p class="text-slate-500 text-xs sm:text-sm">Filter sessions across all 6 disciplines to check training timings and coaches.</p>
+        
             </div>
 
             <div class="flex flex-wrap gap-1.5 p-1 rounded-xl bg-white border border-slate-200 shadow-xs">
@@ -622,7 +617,7 @@ const router = {
               <i class="fa-solid fa-trophy"></i> Hall of Fame
             </div>
             <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 font-display">Major Achievements</h2>
-            <p class="text-slate-500 text-sm">Medals and championship honors earned across our 6 training disciplines.</p>
+        
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -636,7 +631,7 @@ const router = {
                     ${ach.year} CHAMPIONSHIP
                   </div>
                   <h3 class="text-base font-bold text-slate-900">${ach.title}</h3>
-                  <p class="text-xs text-slate-600 leading-relaxed">${ach.description}</p>
+                
                 </div>
               </div>
             `).join('')}
@@ -665,7 +660,7 @@ const router = {
                   <p class="text-xs text-slate-600 flex items-center gap-1.5 font-medium">
                     <i class="fa-solid fa-location-dot text-brand-600"></i> ${ev.location}
                   </p>
-                  <p class="text-xs text-slate-500 leading-relaxed pt-1">${ev.description}</p>
+                
                 </div>
               </div>
             `).join('')}
@@ -679,7 +674,7 @@ const router = {
               <i class="fa-solid fa-camera"></i> Life at Vendhan Academy
             </div>
             <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 font-display">Photo Gallery Showcase</h2>
-            <p class="text-slate-500 text-sm">Athletic action from skating tracks, archery grounds, football matches, and silambam arenas.</p>
+        
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -719,7 +714,7 @@ const router = {
               <i class="fa-solid fa-person-running"></i> Coach Training Portal
             </div>
             <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-display">Sports Coaching, Attendance & Fees</h1>
-            <p class="text-xs text-slate-500">Universal access across all 6 sports with dedicated Attendance and Dual Fees list views.</p>
+        
           </div>
           <div class="text-xs bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700">
             Coach: <span class="font-bold text-slate-900">${state.user.name}</span>
@@ -731,22 +726,22 @@ const router = {
           <button onclick="window.coach.switchTab('workspace')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
             state.coachTab === 'workspace' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }">
-            <i class="fa-solid fa-table-cells-large"></i> Interactive Training Grid
+            <i class="fa-solid fa-table-cells-large"></i> Grid
           </button>
           <button onclick="window.coach.switchTab('student_profiles_coach')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
             state.coachTab === 'student_profiles_coach' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }">
-            <i class="fa-solid fa-id-card"></i> Regular Student Profiles
+            <i class="fa-solid fa-id-card"></i> Students
           </button>
           <button onclick="window.coach.switchTab('attendance_list')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
             state.coachTab === 'attendance_list' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }">
-            <i class="fa-solid fa-clipboard-list"></i> Attendance View (List)
+            <i class="fa-solid fa-clipboard-list"></i> Attendance
           </button>
           <button onclick="window.coach.switchTab('fees_list')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
             state.coachTab === 'fees_list' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }">
-            <i class="fa-solid fa-receipt"></i> Fees View (List)
+            <i class="fa-solid fa-receipt"></i> Fees
           </button>
         </div>
 
@@ -775,12 +770,13 @@ const router = {
               <i class="fa-solid fa-whistle"></i> Head Coach Command
             </div>
             <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-display">Coaching Oversight, Attendance & Fees</h1>
-            <p class="text-xs text-slate-500">Supervise staff across 6 disciplines, enroll regular students, monitor attendance, and inspect fees.</p>
+        
           </div>
           <div class="flex flex-wrap items-center gap-3">
             <button onclick="openAddStudentModal()" class="px-5 py-2.5 rounded-xl bg-sportsGreen-600 hover:bg-sportsGreen-700 text-white font-bold text-xs shadow-md shadow-green-600/20 flex items-center gap-2 transition cursor-pointer">
-              <i class="fa-solid fa-user-plus"></i> + Add New Student
+              <i class="fa-solid fa-user-plus"></i> + Enroll
             </button>
+            <button onclick="window.ui.openModal('modal-add-user')" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 flex items-center gap-2 transition cursor-pointer"><i class="fa-solid fa-user-tie"></i> + Coach</button>
             <div class="text-xs text-slate-700 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200 font-medium">
               Head of Coaching: <span class="font-bold text-slate-900">${state.user.name}</span>
             </div>
@@ -792,12 +788,12 @@ const router = {
           <button onclick="window.headCoach.switchTab('supervision')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
             state.headCoachTab === 'supervision' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }">
-            <i class="fa-solid fa-network-wired"></i> Coaches & Daily Marking
+            <i class="fa-solid fa-network-wired"></i> Supervise
           </button>
           <button onclick="window.headCoach.switchTab('coach_attendance_list')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
             state.headCoachTab === 'coach_attendance_list' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }">
-            <i class="fa-solid fa-user-check"></i> Coach Attendance (List)
+            <i class="fa-solid fa-user-check"></i> Attendance
           </button>
           <button onclick="window.headCoach.switchTab('student_grid')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
             state.headCoachTab === 'student_grid' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -807,17 +803,17 @@ const router = {
           <button onclick="window.headCoach.switchTab('student_profiles_hc')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
             state.headCoachTab === 'student_profiles_hc' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }">
-            <i class="fa-solid fa-id-card"></i> Regular Student Profiles
+            <i class="fa-solid fa-id-card"></i> Students
           </button>
           <button onclick="window.headCoach.switchTab('student_attendance_list')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
             state.headCoachTab === 'student_attendance_list' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }">
-            <i class="fa-solid fa-clipboard-user"></i> Student Attendance (List)
+            <i class="fa-solid fa-clipboard-user"></i> Attendance
           </button>
           <button onclick="window.headCoach.switchTab('fees_list')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
             state.headCoachTab === 'fees_list' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }">
-            <i class="fa-solid fa-receipt"></i> Academy Fees (List)
+            <i class="fa-solid fa-receipt"></i> Fees
           </button>
         </div>
 
@@ -845,17 +841,17 @@ const router = {
               <i class="fa-solid fa-shield-halved"></i> Superuser Administration
             </div>
             <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-display">Academy Command Center</h1>
-            <p class="text-xs text-slate-500">Full control across 6 sports: user allocation, dual fee ledger, coach payroll, and logo branding.</p>
+        
           </div>
           <div class="flex flex-wrap items-center gap-3">
             <!-- Dedicated Admin-Only Logo Upload Button -->
             <label title="Upload Official Academy Logo (Admin Only)" class="cursor-pointer px-4 py-2.5 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-xs border border-brand-200 shadow-xs flex items-center gap-2 transition">
               <i class="fa-solid fa-cloud-arrow-up text-brand-600 text-sm"></i>
-              <span>Upload Academy Logo</span>
+              <span>Logo</span>
               <input type="file" id="admin-logo-upload-input" accept="image/*" class="hidden" onchange="window.admin.handleAdminLogoUpload(event)" />
             </label>
             <button onclick="window.ui.openModal('modal-add-user')" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md shadow-brand-600/30 flex items-center gap-2 transition">
-              <i class="fa-solid fa-user-plus"></i> Allocate Credentials
+              <i class="fa-solid fa-user-plus"></i> Access
             </button>
           </div>
         </div>
@@ -863,21 +859,21 @@ const router = {
         <!-- Navigation Tabs -->
         <div class="flex overflow-x-auto gap-2 p-1.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
           ${[
-            { id: 'overview', icon: 'fa-chart-pie', label: 'System Overview' },
-            { id: 'users', icon: 'fa-users', label: 'User Management' },
-            { id: 'student_profiles', icon: 'fa-id-card', label: 'Regular Student Profiles' },
-            { id: 'archive', icon: 'fa-box-archive', label: 'Student Archive' },
-            { id: 'attendance', icon: 'fa-clipboard-user', label: 'Attendance (List)' },
-            { id: 'fees', icon: 'fa-receipt', label: 'Dual Fees (List)' },
-            { id: 'salaries', icon: 'fa-money-bill-wave', label: 'Coach Salaries' },
-            { id: 'cms', icon: 'fa-pen-to-square', label: 'Website CMS & Logo' }
+            { id: 'overview', icon: 'fa-chart-pie', label: 'Overview' },
+            { id: 'users', icon: 'fa-users-gear', label: 'Users' },
+            { id: 'student_profiles', icon: 'fa-id-card', label: 'Students' },
+            { id: 'archive', icon: 'fa-box-archive', label: 'Archive' },
+            { id: 'attendance', icon: 'fa-calendar-check', label: 'Attendance' },
+            { id: 'fees', icon: 'fa-receipt', label: 'Fees' },
+            { id: 'salaries', icon: 'fa-wallet', label: 'Payroll' },
+            { id: 'cms', icon: 'fa-sliders', label: 'Settings' }
           ].map((tab) => `
             <button onclick="window.router.switchTab('${tab.id}')" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
               state.currentTab === tab.id
                 ? 'bg-brand-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }">
-              <i class="fa-solid ${tab.icon}"></i> ${tab.label}
+              <i class="fa-solid ${tab.icon}"></i><span class="hidden sm:inline ml-1">${tab.label}</span>
             </button>
           `).join('')}
         </div>
@@ -954,18 +950,18 @@ const router = {
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div onclick="window.router.switchTab('fees')" class="cursor-pointer p-6 rounded-2xl bg-white border border-slate-200 hover:border-brand-400 shadow-xs transition">
                 <i class="fa-solid fa-receipt text-brand-600 text-2xl mb-3"></i>
-                <h3 class="font-bold text-slate-900 text-base">Dual Fees List View</h3>
-                <p class="text-xs text-slate-500 mt-1">Click the Fees icon on any student to view Tuition & Kit breakdowns and perform instant updates.</p>
+                <h3 class="font-bold text-slate-900 text-base">Fees</h3>
+        
               </div>
               <div onclick="window.router.switchTab('attendance')" class="cursor-pointer p-6 rounded-2xl bg-white border border-slate-200 hover:border-brand-400 shadow-xs transition">
                 <i class="fa-solid fa-clipboard-user text-blue-600 text-2xl mb-3"></i>
                 <h3 class="font-bold text-slate-900 text-base">Attendance List View</h3>
-                <p class="text-xs text-slate-500 mt-1">Universal attendance lists for students and coaches with date & status filters.</p>
+        
               </div>
               <div onclick="window.router.switchTab('cms')" class="cursor-pointer p-6 rounded-2xl bg-white border border-slate-200 hover:border-brand-400 shadow-xs transition">
                 <i class="fa-solid fa-image text-amber-600 text-2xl mb-3"></i>
-                <h3 class="font-bold text-slate-900 text-base">Logo & Website CMS</h3>
-                <p class="text-xs text-slate-500 mt-1">Upload and manage official academy logo, training timetables, and tournament notices.</p>
+                <h3 class="font-bold text-slate-900 text-base">Settings</h3>
+        
               </div>
             </div>
           </div>
@@ -981,8 +977,8 @@ const router = {
           <div class="space-y-4">
             <div class="flex items-center justify-between">
               <div>
-                <h3 class="text-lg font-bold text-slate-900 font-display">Regular Student Profiles</h3>
-                <p class="text-xs text-slate-500">Complete profiles with details, fees, and about section for all active regular students</p>
+                <h3 class="text-lg font-bold text-slate-900 font-display">Students</h3>
+        
               </div>
               <span class="text-xs font-semibold text-slate-600">${students.length} Active Students</span>
             </div>
@@ -1009,7 +1005,7 @@ const router = {
                     ${s.bio ? `<div class="p-2 rounded-lg bg-slate-50 border border-slate-200"><span class="text-slate-500 block mb-1">About:</span> <span class="text-slate-700 line-clamp-2">${s.bio}</span></div>` : ''}
                   </div>
                   <button onclick="window.openStudentProfileModal('${s._id || s.id}')" class="w-full mt-3 px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition">
-                    View Full Profile
+                    View
                   </button>
                 </div>
               `).join('')}
@@ -1086,7 +1082,7 @@ const router = {
                 <i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading...
               </span>
             </div>
-            <p class="text-xs text-slate-500 mt-0.5">Search and inspect former admissions, alumni records, and legacy registrations across all sports disciplines.</p>
+        
           </div>
           
           <div class="flex items-center gap-3">
@@ -1183,7 +1179,7 @@ const router = {
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-base font-bold text-slate-900 font-display">Trainee Dual Fees (List View)</h3>
-            <p class="text-xs text-slate-500">Click the Fees icon on any student to open the breakdown and edit Tuition / Kit amounts</p>
+        
           </div>
           <span class="text-xs text-slate-600 font-semibold">${students.length} Total Enrolled Trainees</span>
         </div>
@@ -1327,7 +1323,7 @@ const router = {
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-base font-bold text-slate-900 font-display">Live Website CMS & Official Branding Editor</h3>
-            <p class="text-xs text-slate-500">Only Administrators have permission to upload logos and publish landing content.</p>
+        
           </div>
           <button type="submit" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md shadow-brand-600/30 flex items-center gap-2 cursor-pointer">
             <i class="fa-solid fa-floppy-disk"></i> Save & Publish CMS
@@ -1348,7 +1344,7 @@ const router = {
                 <i class="fa-solid fa-cloud-arrow-up"></i> Choose Logo File
                 <input type="file" accept="image/*" class="hidden" onchange="window.admin.handleAdminLogoUpload(event)" />
               </label>
-              <p class="text-[11px] text-slate-500">Supports PNG, JPG, WebP, or SVG. Automatically syncs with the academy header banner.</p>
+        
             </div>
           </div>
         </div>
@@ -1439,7 +1435,7 @@ const router = {
           <!-- Profile Banner -->
           <div class="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div class="flex items-center gap-4">
-              <button onclick="window.openStudentProfileModal('${profile.id || state.user?._id || state.user?.id}')" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white text-2xl shadow-md hover:scale-105 transition" title="View Full Profile">
+              <button onclick="window.openStudentProfileModal('${profile.id || state.user?._id || state.user?.id}')" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white text-2xl shadow-md hover:scale-105 transition" title="View">
                 <i class="fa-solid fa-id-card"></i>
               </button>
               <div>
@@ -1453,7 +1449,7 @@ const router = {
 
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <button onclick="window.openStudentProfileModal('${profile.id || state.user?._id || state.user?.id}')" class="px-4 py-2.5 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 font-bold text-xs flex items-center justify-center gap-2 transition">
-                <i class="fa-solid fa-id-card"></i> View Full Profile
+                <i class="fa-solid fa-id-card"></i> View
               </button>
               <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1">
                 <div class="text-slate-500 font-bold uppercase text-[10px]">Assigned Coach:</div>
@@ -1672,8 +1668,8 @@ const coach = {
           <div class="space-y-4">
             <div class="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
               <div>
-                <h3 class="text-base font-bold text-slate-900 font-display">Regular Student Profiles</h3>
-                <p class="text-xs text-slate-500">View student details, fees, and about section (View-only access)</p>
+                <h3 class="text-base font-bold text-slate-900 font-display">Students</h3>
+        
               </div>
               <span class="text-xs font-semibold text-slate-600">${students.length} Active Students</span>
             </div>
@@ -1714,7 +1710,7 @@ const coach = {
     }
   },
 
-  // Sub-Tab 1: Interactive Training Grid & Today's Attendance Marking
+  // Sub-Tab 1: Grid & Today's Attendance Marking
   async renderCoachWorkspaceTab(container) {
     container.innerHTML = `
       <div class="space-y-6">
@@ -1874,8 +1870,8 @@ const coach = {
         <div class="space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
             <div>
-              <h3 class="text-base font-bold text-slate-900 font-display">Student Attendance History (List View)</h3>
-              <p class="text-xs text-slate-500">Complete historical attendance logs for student trainees.</p>
+              <h3 class="text-base font-bold text-slate-900 font-display">Attendance History (List View)</h3>
+        
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs font-bold text-slate-700">Total Logs:</span>
@@ -2159,7 +2155,7 @@ const headCoach = {
           <div class="space-y-4">
             <div class="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
               <div>
-                <h3 class="text-base font-bold text-slate-900 font-display">Regular Student Profiles</h3>
+                <h3 class="text-base font-bold text-slate-900 font-display">Students</h3>
                 <p class="text-xs text-slate-500">View complete profiles, details, fees, and about section for all active students</p>
               </div>
               <span class="text-xs font-semibold text-slate-600">${students.length} Active Students</span>
@@ -2187,7 +2183,7 @@ const headCoach = {
                     ${s.bio ? `<div class="p-2 rounded-lg bg-slate-50 border border-slate-200"><span class="text-slate-500 block mb-1">About:</span> <span class="text-slate-700 line-clamp-2">${s.bio}</span></div>` : ''}
                   </div>
                   <button onclick="window.openStudentProfileModal('${s._id || s.id}')" class="w-full mt-3 px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition">
-                    View Full Profile
+                    View
                   </button>
                 </div>
               `).join('')}
@@ -2234,7 +2230,7 @@ const headCoach = {
               <span class="text-xs font-bold text-slate-700 uppercase">Attendance Date:</span>
               <input type="date" id="head-coach-date" value="${state.selectedDate}" onchange="window.headCoach.onDateChange(this.value)" class="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:border-brand-500" />
             </div>
-            <span class="text-xs text-brand-700 font-bold">Universal Coach Attendance</span>
+            <span class="text-xs text-brand-700 font-bold">Universal Attendance</span>
           </div>
 
           <div id="head-coach-roster" class="space-y-3">
@@ -2304,7 +2300,7 @@ const headCoach = {
     }
   },
 
-  // Head Coach Sub-Tab 2: Coach Attendance List
+  // Head Coach Sub-Tab 2: Attendance List
   async renderCoachAttendanceListTab(container) {
     try {
       const recordsRes = await api.get('/api/attendance?role=coach');
@@ -2314,8 +2310,8 @@ const headCoach = {
         <div class="space-y-4">
           <div class="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
             <div>
-              <h3 class="text-base font-bold text-slate-900 font-display">Coach Attendance Records (List View)</h3>
-              <p class="text-xs text-slate-500">Historical presence logs for all academy coaches across 6 sports.</p>
+              <h3 class="text-base font-bold text-slate-900 font-display">Attendance Records (List View)</h3>
+        
             </div>
             <span class="text-xs font-bold text-slate-700">Total Logs: ${records.length}</span>
           </div>
@@ -2361,7 +2357,7 @@ const headCoach = {
     }
   },
 
-  // Head Coach Sub-Tab 3: Student Attendance List
+  // Head Coach Sub-Tab 3: Attendance List
   async renderStudentAttendanceListTab(container) {
     try {
       const recordsRes = await api.get('/api/attendance?role=student');
@@ -2372,7 +2368,7 @@ const headCoach = {
           <div class="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
             <div>
               <h3 class="text-base font-bold text-slate-900 font-display">Student Trainees Attendance (List View)</h3>
-              <p class="text-xs text-slate-500">Universal academy student attendance records across all disciplines.</p>
+        
             </div>
             <span class="text-xs font-bold text-slate-700">Total Logs: ${records.length}</span>
           </div>
@@ -2418,7 +2414,7 @@ const headCoach = {
     }
   },
 
-  // Head Coach Sub-Tab 4: Academy Fees List
+  // Head Coach Sub-Tab 4: Fees List
   async renderHeadCoachFeesListTab(container) {
     try {
       const studentsRes = await api.get('/api/users?role=student');
@@ -2429,7 +2425,7 @@ const headCoach = {
           <div class="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
             <div>
               <h3 class="text-base font-bold text-slate-900 font-display">Academy Trainee Fees (List View)</h3>
-              <p class="text-xs text-slate-500">Overview of tuition and kit fee accounts across all 6 sports disciplines.</p>
+        
             </div>
             <span class="text-xs text-slate-600 font-semibold">${students.length} Total Enrolled Trainees</span>
           </div>
@@ -2528,10 +2524,34 @@ const headCoach = {
     document.getElementById('hc-student-kit-paid').value = '2000';
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('hc-student-enrollment-date').value = today;
+    this.updateFeeCalc();
     ui.openModal('modal-add-student-hc');
   },
 
+  updateFeeCalc() {
+    const t = Number(document.getElementById("hc-student-total-fee")?.value || 0);
+    const p = Number(document.getElementById("hc-student-paid-fee")?.value || 0);
+    const kt = Number(document.getElementById("hc-student-kit-total")?.value || 0);
+    const kp = Number(document.getElementById("hc-student-kit-paid")?.value || 0);
+    const td = Math.max(0, t - p);
+    const kd = Math.max(0, kt - kp);
+    const totDue = td + kd;
+    const totFee = t + kt;
+    const totPaid = p + kp;
+    let status = "Paid";
+    let statusClass = "bg-green-50 text-sportsGreen-700 border-green-200";
+    if (totDue > 0 && totPaid > 0) { status = "Partial"; statusClass = "bg-amber-50 text-amber-700 border-amber-200"; }
+    else if (totDue > 0 && totPaid === 0) { status = "Unpaid"; statusClass = "bg-red-50 text-sportsRed-700 border-red-200"; }
+    const tuitionDueEl = document.getElementById("hc-tuition-due");
+    if (tuitionDueEl) tuitionDueEl.textContent = "₹" + td.toLocaleString("en-IN");
+    const kitDueEl = document.getElementById("hc-kit-due");
+    if (kitDueEl) kitDueEl.textContent = "₹" + kd.toLocaleString("en-IN");
+    const statusEl = document.getElementById("hc-fee-status");
+    if (statusEl) { statusEl.textContent = status; statusEl.className = "px-2 py-0.5 rounded-full border " + statusClass; }
+  },
+
   async handleAddStudentSubmit(e) {
+
     e.preventDefault();
     try {
       const username = document.getElementById('hc-student-username').value.trim();
@@ -2543,6 +2563,7 @@ const headCoach = {
       const address = document.getElementById('hc-student-address').value.trim();
       const dateOfBirth = document.getElementById('hc-student-dob').value || null;
       const gender = document.getElementById('hc-student-gender').value;
+      const sportLevel = document.getElementById('hc-student-sport-level').value;
       const email = document.getElementById('hc-student-email').value.trim();
       const status = document.getElementById('hc-student-status').value;
       const kitType = document.getElementById('hc-student-kit-type').value;
@@ -2568,6 +2589,7 @@ const headCoach = {
         address,
         dateOfBirth,
         gender,
+        sportLevel,
         status,
         kitType,
         assignedCoach,
@@ -2608,6 +2630,10 @@ const headCoach = {
 };
 
 window.headCoach = headCoach;
+window.hcRecalcFees = function() {
+  if (window.headCoach && typeof window.headCoach.updateFeeCalc === 'function') window.headCoach.updateFeeCalc();
+};
+
 window.openAddStudentModal = function() {
   if (window.headCoach && typeof window.headCoach.openAddStudentModal === 'function') {
     window.headCoach.openAddStudentModal();
@@ -3109,7 +3135,7 @@ window.openStudentProfileModal = async function(studentId) {
       overallStatus = 'Partial';
       statusClass = 'bg-amber-50 text-amber-700 border-amber-200';
     } else if (totalDue > 0 && totalPaid === 0) {
-      overallStatus = 'Overdue';
+      overallStatus = 'Unpaid';
       statusClass = 'bg-red-50 text-sportsRed-700 border-red-200';
     }
     

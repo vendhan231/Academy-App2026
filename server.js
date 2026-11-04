@@ -474,7 +474,7 @@ app.post('/api/academy-logo', authenticate, authorize(['admin']), async (req, re
 // 3. POST /api/users: [Admin] Create new student/coach with fee and kit fee structures
 app.post('/api/users', authenticate, authorize(['admin']), async (req, res) => {
   try {
-    const { username, password, role, name, sport, phone, fees, kitFees, coachSalary } = req.body;
+    const { username, password, role, name, sport, phone, email, parentName, address, dateOfBirth, gender, sportLevel, status, kitType, assignedCoach, enrollmentDate, bio, fees, kitFees, coachSalary } = req.body;
 
     if (!username || !role || !name) {
       return res.status(400).json({
@@ -572,7 +572,7 @@ app.get('/api/users', authenticate, authorize(['admin', 'head_coach', 'coach']),
 // 4.1 POST /api/students: [Admin, Head Coach] Register a new regular active student
 app.post('/api/students', authenticate, authorize(['admin', 'head_coach']), async (req, res) => {
   try {
-    const { username, password, name, sport, phone, email, parentName, address, dateOfBirth, gender, status, kitType, assignedCoach, fees, kitFees, enrollmentDate, bio } = req.body;
+    const { username, password, name, sport, phone, email, parentName, address, dateOfBirth, gender, sportLevel, status, kitType, assignedCoach, fees, kitFees, enrollmentDate, bio } = req.body;
 
     if (!username || !name) {
       return res.status(400).json({
@@ -609,10 +609,11 @@ app.post('/api/students', authenticate, authorize(['admin', 'head_coach']), asyn
       address: address || '',
       dateOfBirth: dateOfBirth || null,
       gender: gender || '',
+      sportLevel: sportLevel || 'Beginner',
       status: status || 'Active',
       kitType: kitType || 'No Kit',
       assignedCoach: assignedCoach || '',
-      enrollmentDate: enrollmentDate || null,
+      enrollmentDate: enrollmentDate || new Date(),
       bio: bio || '',
       fees: {
         total: totalFee,
@@ -676,14 +677,15 @@ app.put('/api/students/:id', authenticate, authorize(['admin', 'head_coach']), a
     }
 
     const {
-      name, sport, phone, parentName, address, dateOfBirth, gender,
-      sportLevel, enrollmentDate, bio, profilePhoto, fees, kitFees
+      name, sport, phone, email, parentName, address, dateOfBirth, gender,
+      sportLevel, enrollmentDate, bio, profilePhoto, status, kitType, assignedCoach, fees, kitFees
     } = req.body;
 
     const update = {};
     if (name !== undefined) update.name = name;
     if (sport !== undefined) update.sport = sport;
     if (phone !== undefined) update.phone = phone;
+    if (email !== undefined) update.email = email;
     if (parentName !== undefined) update.parentName = parentName;
     if (address !== undefined) update.address = address;
     if (dateOfBirth !== undefined) update.dateOfBirth = dateOfBirth;
@@ -692,6 +694,9 @@ app.put('/api/students/:id', authenticate, authorize(['admin', 'head_coach']), a
     if (enrollmentDate !== undefined) update.enrollmentDate = enrollmentDate;
     if (bio !== undefined) update.bio = bio;
     if (profilePhoto !== undefined) update.profilePhoto = profilePhoto;
+    if (status !== undefined) update.status = status;
+    if (kitType !== undefined) update.kitType = kitType;
+    if (assignedCoach !== undefined) update.assignedCoach = assignedCoach;
     if (fees !== undefined) update.fees = fees;
     if (kitFees !== undefined) update.kitFees = kitFees;
 
